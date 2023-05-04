@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-class TaskModel(nn.Module):
+class TaskLinearModel(nn.Module):
 
     def __init__(self, w, v, c):
         super().__init__()
@@ -82,7 +82,7 @@ class MetaModel(nn.Module):
         return model
 
     def define_model(self, w):
-        task_model = TaskModel(w, self.V_hat, self.c)
+        task_model = TaskLinearModel(w, self.V_hat, self.c)
         return task_model
 
     def define_task_models(self, W):
