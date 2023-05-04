@@ -6,14 +6,14 @@ class TaskModel(nn.Module):
 
     def __init__(self, w, v, c):
         super().__init__()
-        self.w_hat = w
+        self.w = w
         self.V = v
-        self.c = c
+        self.c = c if c is not None else lambda x:0
 
     def forward(self, x):
         assert x.ndim > 1
-        embedding = self.V(x) 
-        return embedding @ self.w + self.c(x)
+        V = self.V(x) 
+        return V @ self.w + self.c(x)
     
     def d_flow(self, t, x):
         return self.forward(x)
@@ -23,7 +23,7 @@ class MetaModel(nn.Module):
 
     def __init__(self, W_values, V, c=None) -> None:
         super().__init__()
-        self.W_values = nn.Parameter(W_values)
+        self.W = nn.Parameter(W_values)
         self.T, self.r = W_values.shape
         self.V = V
         self.c = c
@@ -33,18 +33,25 @@ class MetaModel(nn.Module):
     # def embed(self, x):
     #     return self.V(x)@self.transform.T
     
-    def forward(self, x):
+    # def forward(self, x):
+    #     assert x.ndim > 1
+    #     embedding = self.V(x)  # [b, d, r]
+    #     W = self.W  # [T, r]
+    #     c = self.c(x) if self.c is not None else 0
+    #     predictions = embedding@W.T + c.unsqueeze(2).expand(-1, -1, self.T) # [b, d, T]
+    #     return predictions
+    def forward(self, x, task_index):
         assert x.ndim > 1
         embedding = self.V(x)  # [b, d, r]
-        W = self.W_values  # [T, r]
+        w = self.W[task_index]  
         c = self.c(x) if self.c is not None else 0
-        predictions = embedding@W.T + c.unsqueeze(2).expand(-1, -1, self.T) # [b, d, T]
+        predictions = embedding@w + c
         return predictions
     
     def task_forward(self, x, task):
         assert x.ndim > 1
         embedding = self.V(x)  # [b, d, r]
-        W = self.W_values  # [T, r]
+        W = self.W  # [T, r]
         c = self.c(x) if self.c is not None else 0
         predictions = embedding@W.T + c.unsqueeze(2).expand(-1, -1, self.T) # [b, d, T]
         return predictions
@@ -53,17 +60,17 @@ class MetaModel(nn.Module):
     def estimate_transform(self, W_star, indices=None):
         sample_size, _ = W_star.shape
         estimator, residuals, rank, s = np.linalg.lstsq(
-        self.W_values[:sample_size].detach(), W_star, rcond=None)
+        self.W[:sample_size].detach(), W_star, rcond=None)
         return estimator
 
     def recalibrate(self, W_star):
     
         self.estimator = self.estimate_transform(W_star)
         
-        self.W_hat = self.W_values.detach() @ self.estimator
+        self.W_hat = self.W.detach() @ self.estimator
 
         transform = np.linalg.inv(self.estimator)
-        tensor = torch.tensor(transform, requires_grad=False)
+        tensor = torch.tensor(transform, dtype=torch.float, requires_grad=False)
         layer = nn.Linear(self.r, self.r, bias=False)
         layer.weight.data = tensor
         self.V_hat = nn.Sequential(self.V, layer)
@@ -80,5 +87,16 @@ class MetaModel(nn.Module):
         return self.define_task_model(w_hat.squeeze())
 
     def define_task_model(self, w):
-        task_model = TaskModel(w, self.V, self.c)
+        task_model = TaskModel(torch.tensor(w, dtype=torch.float), self.V_hat, self.c)
         return task_model
+
+class MAML(nn.Module):
+
+    def __init__(self, net) -> None:
+        super().__init__()
+        self.net = net
+    
+    def forward(self, x):
+        return self.net(x)
+    
+    def 

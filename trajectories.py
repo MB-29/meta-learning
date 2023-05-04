@@ -83,7 +83,7 @@ for step in range(n_gradient):
     # predictions = meta_model(grid)
     # loss = loss_function(y_target, predictions)
 
-    loss = system.trajectory_loss(meta_model.W_values, meta_model.V, meta_model.c, training_data)
+    loss = system.trajectory_loss(meta_model.W, meta_model.V, meta_model.c, training_data)
     # print(f'loss = {loss}')
 
     loss_values[step] = loss
@@ -133,7 +133,7 @@ w_error_values = np.zeros(n_w*n_w)
 y_values = V_target@grid_w.T + c_target.unsqueeze(2).expand(-1, -1,n_w**2)
 for index, w in enumerate(grid_w):
     adapted_model = meta_model.adapt(grid, y_values[:, :, index])
-    w_hat = adapted_model.w_hat
+    w_hat = adapted_model.w
     w_error =  100 * (np.abs(w - w_hat) / np.abs(w)).mean()
     w_error_values[index] = w_error
 

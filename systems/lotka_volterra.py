@@ -24,8 +24,10 @@ class LotkaVolterra(System):
             beta, delta = beta_values_train[i], delta_values_train[j]
             index = 3*i + j
             W_train[index] = beta, delta
+    # b, d = np.meshgrid(beta_values_train, delta_values_train)
+    # W_train = np.concatenate((b.reshape((-1, 1)), d.reshape(-1, 1)), 1)
     W_train = torch.tensor(W_train, dtype=torch.float)
-    training_task_samples = 4
+    training_task_n_samples = 4
 
     beta_values_test = [0.625, 1.125]
     delta_values_test = [0.625, 1.125]
@@ -128,7 +130,7 @@ class LotkaVolterra(System):
             w = self.W_test[t:t+1]
             adaptation_trajectory = self.generate_data(w, n_samples=1)
             adapted_model = meta_model.adapt(x, y)
-            w_hat = adapted_model.w_hat
+            w_hat = adapted_model.w
         predictions = self.simulate(V, c, W_adapt)
         mse = np.mean((predictions - test_data)**2)
         return mse

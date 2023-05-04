@@ -1,5 +1,5 @@
+import numpy as np
 import torch
-
 from scipy.integrate import odeint
 from torchdiffeq import odeint as d_odeint
 
@@ -29,3 +29,15 @@ def integrate_trajectory(x0, V, c, w, time_values):
     # solution = odeint(flow, x0, time_values, args=(beta, delta))
         solution = odeint(flow, x0, time_values)
     return solution
+
+def build_grid(a_values, b_values):
+    length = len(a_values)
+    assert len(b_values == length)
+    grid = np.zeros((length**2, 2))
+    for i in range(length):
+        for j in range(length):
+            a, b = a_values[i], b_values[j]
+            index = length*i + j
+            grid[index] = a, b
+    W_train = torch.tensor(W_train, dtype=torch.float)
+    training_task_samples = 4
