@@ -27,13 +27,13 @@ class MetaModel(nn.Module):
         self.V_hat = V
         self.c = c
 
-    def forward(self, x, task_index):
-        assert x.ndim > 1
-        embedding = self.V(x)  # [b, d, r]
-        w = self.W[task_index]  
-        c = self.c(x) if self.c is not None else 0
-        predictions = embedding@w + c
-        return predictions
+    # def forward(self, x, task_index):
+    #     assert x.ndim > 1
+    #     embedding = self.V(x)  # [b, d, r]
+    #     w = self.W[task_index]  
+    #     c = self.c(x) if self.c is not None else 0
+    #     predictions = embedding@w + c
+    #     return predictions
     
     # def task_forward(self, x, task):
     #     assert x.ndim > 1
