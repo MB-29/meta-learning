@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm 
 
-from model import MetaModel
+from model import TaskLinearMetaModel, TaskLinearModel
 from systems.dipole import Dipole
 
 # np.random.seed(5)
@@ -35,7 +35,7 @@ V_net = torch.nn.Sequential(
 # c_net = nn.Linear(2, 2)
 W_values = torch.abs(torch.randn(T, r))
 # torch.randn(T, 2, requires_grad=True)
-meta_model = MetaModel(V_net, c=None)
+meta_model = TaskLinearMetaModel(V_net, c=None)
 training_task_models = meta_model.define_task_models(W_values)
 
 # W_calibration = 
@@ -81,6 +81,7 @@ plt.plot(V_test_values)
 plt.yscale('log')
 plt.show()
 
+v_hat = meta_model.V_hat
 
 for index in range(system.T):
     plt.subplot(3, 3, index+1)
@@ -88,6 +89,6 @@ for index in range(system.T):
     # w = meta_model.W[index]
     plt.title(f'U = {w[0]:3f}, p = {w[1]:3f}')
     # system.plot_potential(w)
-    potential_map = meta_model.define_model(torch.tensor(w, dtype=torch.float))
+    potential_map = TaskLinearModel(torch.tensor(w, dtype=torch.float), v_hat)
     system.plot_field(potential_map)
 plt.show()

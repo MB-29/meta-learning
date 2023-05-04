@@ -4,7 +4,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from model import MetaModel
+from model import TaskLinearMetaModel
 from systems.lotka_volterra import LotkaVolterra
 
 np.random.seed(5)
@@ -67,7 +67,7 @@ c_net = nn.Linear(2, 2)
 W0 = torch.abs(torch.randn_like(W_train))
 W = W0.clone().requires_grad_(True)
 # torch.randn(T, 2, requires_grad=True)
-meta_model = MetaModel(V_net, c_net)
+meta_model = TaskLinearMetaModel(V_net, c_net)
 task_models = meta_model.define_task_models(W)
 # W_calibration = 
 
