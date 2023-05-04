@@ -21,25 +21,12 @@ class TaskModel(nn.Module):
 
 class MetaModel(nn.Module):
 
-    def __init__(self, W_values, V, c=None) -> None:
+    def __init__(self, V, c=None) -> None:
         super().__init__()
-        self.W = nn.Parameter(W_values)
-        self.T, self.r = W_values.shape
         self.V = V
+        self.V_hat = V
         self.c = c
 
-        # transform = torch.eye(self.r)
-
-    # def embed(self, x):
-    #     return self.V(x)@self.transform.T
-    
-    # def forward(self, x):
-    #     assert x.ndim > 1
-    #     embedding = self.V(x)  # [b, d, r]
-    #     W = self.W  # [T, r]
-    #     c = self.c(x) if self.c is not None else 0
-    #     predictions = embedding@W.T + c.unsqueeze(2).expand(-1, -1, self.T) # [b, d, T]
-    #     return predictions
     def forward(self, x, task_index):
         assert x.ndim > 1
         embedding = self.V(x)  # [b, d, r]
@@ -48,26 +35,33 @@ class MetaModel(nn.Module):
         predictions = embedding@w + c
         return predictions
     
-    def task_forward(self, x, task):
-        assert x.ndim > 1
-        embedding = self.V(x)  # [b, d, r]
-        W = self.W  # [T, r]
-        c = self.c(x) if self.c is not None else 0
-        predictions = embedding@W.T + c.unsqueeze(2).expand(-1, -1, self.T) # [b, d, T]
-        return predictions
+    # def task_forward(self, x, task):
+    #     assert x.ndim > 1
+    #     embedding = self.V(x)  # [b, d, r]
+    #     W = self.W  # [T, r]
+    #     c = self.c(x) if self.c is not None else 0
+    #     predictions = embedding@W.T + c.unsqueeze(2).expand(-1, -1, self.T) # [b, d, T]
+    #     return predictions
 
     
     def estimate_transform(self, W_star, indices=None):
-        sample_size, _ = W_star.shape
+        calibration_size, _ = W_star.shape
+        # w_values = []
+        # for t in range(calibration_size):
+        #     w = self.task_models[t].w
+        #     w_values.append(w.detach().numpy())
+        W_regression = self.W[:calibration_size].detach().numpy()
         estimator, residuals, rank, s = np.linalg.lstsq(
-        self.W[:sample_size].detach(), W_star, rcond=None)
+        W_regression, W_star, rcond=None)
         return estimator
 
     def recalibrate(self, W_star):
     
         self.estimator = self.estimate_transform(W_star)
         
-        self.W_hat = self.W.detach() @ self.estimator
+        # for model in self.define_task_models:
+        #     model.w = self.estimator.T @ model.w
+        self.W_hat = self.W.detach() @ torch.tensor(self.estimator, dtype=torch.float)
 
         transform = np.linalg.inv(self.estimator)
         tensor = torch.tensor(transform, dtype=torch.float, requires_grad=False)
@@ -84,11 +78,24 @@ class MetaModel(nn.Module):
         Y = (y_values - c_values).view(-1)
         
         w_hat, _, _, _ = np.linalg.lstsq(X, Y, rcond=None)
-        return self.define_task_model(w_hat.squeeze())
+        model = self.define_model(w_hat.squeeze())
+        return model
 
-    def define_task_model(self, w):
-        task_model = TaskModel(torch.tensor(w, dtype=torch.float), self.V_hat, self.c)
+    def define_model(self, w):
+        task_model = TaskModel(w, self.V_hat, self.c)
         return task_model
+
+    def define_task_models(self, W):
+        self.W = nn.Parameter(W)
+        self.T, self.r = W.shape
+        # self.W = W
+        self.task_models = []
+        for t in range(self.T):
+            w = self.W[t]
+            model = self.define_model(w)
+            self.task_models.append(model)
+        return self.task_models
+
 
 class MAML(nn.Module):
 

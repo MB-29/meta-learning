@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from model import MetaModel
 from systems.lotka_volterra import LotkaVolterra
@@ -63,27 +64,29 @@ V_net = torch.nn.Sequential(
     nn.Unflatten(1, (d_, r))
 )
 c_net = nn.Linear(2, 2)
-W_values = torch.abs(torch.randn_like(W_train))
+W0 = torch.abs(torch.randn_like(W_train))
+W = W0.clone().requires_grad_(True)
 # torch.randn(T, 2, requires_grad=True)
-meta_model = MetaModel(W_values, V_net, c_net)
+meta_model = MetaModel(V_net, c_net)
+task_models = meta_model.define_task_models(W)
 # W_calibration = 
 
-n_gradient = 5000
+n_gradient = 50000
 test_interval = n_gradient // 100
 W_test_values, V_test_values = [], []
 loss_values = np.zeros(n_gradient)
 optimizer = torch.optim.Adam(meta_model.parameters(), lr=0.001)
 # optimizer_weights = torch.optim.Adam(W_values, lr=0.01)
 loss_function = nn.MSELoss()
-for step in range(n_gradient):
+for step in tqdm(range(n_gradient)):
     # print(W_values)
-    # loss = 0
+    loss = 0
+    for t in range(meta_model.T):
+        model = meta_model.task_models[t]
+        predictions = model(grid)   
+        loss += loss_function(y_target[:, :, t], predictions)
 
-    # meta_predictions = meta_model(grid)
-    # predictions = meta_model(grid)
-    # loss = loss_function(y_target, predictions)
-
-    loss = system.trajectory_loss(meta_model.W, meta_model.V, meta_model.c, training_data)
+    # loss = system.trajectory_loss(meta_model.W, meta_model.V, meta_model.c, training_data)
     # print(f'loss = {loss}')
 
     loss_values[step] = loss
@@ -94,7 +97,7 @@ for step in range(n_gradient):
 
     if step % test_interval != 0:
         continue
-    print(f'step {step}')
+    # print(f'step {step}')
     # V_hat, W_hat = meta_model.recalibrate(W_train[:2])
     V_hat, W_hat = meta_model.recalibrate(W_train)
     W_error = torch.norm(W_hat - W_train)

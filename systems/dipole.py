@@ -69,16 +69,15 @@ class Dipole(System):
         return self.V_star(self.grid)
     
     def loss(self, meta_model, data):
-        V, W = meta_model.V, meta_model.W
+        V = meta_model.V
         # for t in 
         T, batch_size = data.shape
-        assert W.shape[0] == T
         loss = 0
         for t in range(T):
-            w = W[t]
             task_data = torch.tensor(data[t], dtype=torch.float)
             # task_model = meta_model.define_task_model(w)
-            predictions = meta_model(self.grid, t)
+            model = meta_model.task_models[t]
+            predictions = model(self.grid)
             task_loss = self.mse_loss(predictions, task_data)
             loss += task_loss
         return loss

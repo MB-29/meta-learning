@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+from tqdm import tqdm 
 
 from model import MetaModel
 from systems.dipole import Dipole
@@ -34,7 +35,9 @@ V_net = torch.nn.Sequential(
 # c_net = nn.Linear(2, 2)
 W_values = torch.abs(torch.randn(T, r))
 # torch.randn(T, 2, requires_grad=True)
-meta_model = MetaModel(W_values, V_net, c=None)
+meta_model = MetaModel(V_net, c=None)
+training_task_models = meta_model.define_task_models(W_values)
+
 # W_calibration = 
 
 n_gradient = 10000
@@ -44,7 +47,7 @@ loss_values = np.zeros(n_gradient)
 optimizer = torch.optim.Adam(meta_model.parameters(), lr=0.005)
 # optimizer_weights = torch.optim.Adam(W_values, lr=0.01)
 loss_function = nn.MSELoss()
-for step in range(n_gradient):
+for step in tqdm(range(n_gradient)):
 
     loss = system.loss(meta_model, training_data)
 
@@ -56,7 +59,7 @@ for step in range(n_gradient):
 
     if step % test_interval != 0:
         continue
-    print(f'step {step}')
+    # print(f'step {step}')
     V_hat, W_hat = meta_model.recalibrate(W_train[:2])
     # V_hat, W_hat = meta_model.recalibrate(W_train)
     W_error = torch.norm(W_hat - W_train)
@@ -85,6 +88,6 @@ for index in range(system.T):
     # w = meta_model.W[index]
     plt.title(f'U = {w[0]:3f}, p = {w[1]:3f}')
     # system.plot_potential(w)
-    potential_map = meta_model.define_task_model(w)
+    potential_map = meta_model.define_model(torch.tensor(w, dtype=torch.float))
     system.plot_field(potential_map)
 plt.show()
