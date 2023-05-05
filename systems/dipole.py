@@ -23,11 +23,19 @@ class Dipole(System):
 
     d, m, r = 2, 1, 2
 
-    U_values = np.array([1., 2., 3.])
-    p_values = np.array([0.1, 0.5, 1.0])
-    W_train = np.dstack(np.meshgrid(U_values, p_values)).reshape(-1, 2)
+    U_values_train = np.array([1., 2., 3.])
+    p_values_train = np.array([0.1, 0.5, 1.0])
+    parameter_grid_train = np.meshgrid(U_values_train, p_values_train)
+    W_train = np.dstack(parameter_grid_train).reshape(-1, 2)
 
     training_task_n_samples = 1
+
+    U_values_adaptation = np.array([1.5, 2.5])
+    p_values_adaptation = np.array([0.2, 0.7])
+    parameter_grid_adaptation = np.meshgrid(U_values_adaptation, p_values_adaptation)
+    W_adaptation = np.dstack(parameter_grid_adaptation).reshape(-1, 2)
+
+    adaptation_task_n_samples = 1
 
     n_points = 20
     x1_values = torch.linspace(-1, 1, n_points)
@@ -39,7 +47,6 @@ class Dipole(System):
         grid_x2.reshape(-1, 1),
     ], 1)
 
-    mse_loss = torch.nn.MSELoss()
 
     def __init__(self) -> None:
         super().__init__(self.W_train, self.d)
@@ -57,8 +64,9 @@ class Dipole(System):
         return 0
         
     def generate_data(self, W, n_samples):
-        data = np.zeros((self.T, self.n_points**2))
-        for task_index in range(self.T):
+        T, r = W.shape
+        data = np.zeros((T, self.n_points**2))
+        for task_index in range(T):
             w = W[task_index]
             environment = self.define_environment(w)
             potential = environment(self.grid)
@@ -68,19 +76,22 @@ class Dipole(System):
     def generate_test_data(self):
         return self.V_star(self.grid)
     
-    def loss(self, meta_model, data):
-        V = meta_model.V
-        # for t in 
-        T, batch_size = data.shape
-        loss = 0
-        for t in range(T):
-            task_data = torch.tensor(data[t], dtype=torch.float)
-            # task_model = meta_model.define_task_model(w)
-            model = meta_model.task_models[t]
-            predictions = model(self.grid)
-            task_loss = self.mse_loss(predictions, task_data)
-            loss += task_loss
-        return loss
+    def predict(self, model):
+        return model(self.grid)
+    
+    # def loss(self, meta_model, data):
+    #     V = meta_model.V
+    #     # for t in 
+    #     T, batch_size = data.shape
+    #     loss = 0
+    #     for t in range(T):
+    #         task_data = torch.tensor(data[t], dtype=torch.float)
+    #         # task_model = meta_model.define_task_model(w)
+    #         model = meta_model.task_models[t]
+    #         predictions = model(self.grid)
+    #         task_loss = self.mse_loss(predictions, task_data)
+    #         loss += task_loss
+    #     return loss
         # meta_predictions = meta_model(self.grid)
         # predictions = meta_model(self.grid)
         # loss = self.loss_function(data, predictions)

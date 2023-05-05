@@ -64,18 +64,29 @@ class LotkaVolterra(System):
     def c_star(self, x):
         return x * self.constant_parameters
     
-    
-    def simulate(self, V, c, w, x0_values, diff):
+    def simulate(self, dynamics, x0_values, diff):
         if diff:
-            return integrate_trajectory(x0_values, V, c, w, torch.tensor(self.time_values))
+            return integrate_trajectory(x0_values, dynamics, torch.tensor(self.time_values))
         n_samples = x0_values.shape[0]
         trajectories = np.zeros((self.Nt, n_samples, 2))
         for sample_index in range(n_samples):
                 # beta, delta = W[t]
             x0 = x0_values[sample_index]
-            sample_trajectory = integrate_trajectory(x0, V, c, w, self.time_values)
+            sample_trajectory = integrate_trajectory(x0, dynamics, self.time_values)
             trajectories[:, sample_index, :] = sample_trajectory
         return trajectories
+    
+    # def simulate(self, V, c, w, x0_values, diff):
+    #     if diff:
+    #         return integrate_trajectory(x0_values, V, c, w, torch.tensor(self.time_values))
+    #     n_samples = x0_values.shape[0]
+    #     trajectories = np.zeros((self.Nt, n_samples, 2))
+    #     for sample_index in range(n_samples):
+    #             # beta, delta = W[t]
+    #         x0 = x0_values[sample_index]
+    #         sample_trajectory = integrate_trajectory(x0, V, c, w, self.time_values)
+    #         trajectories[:, sample_index, :] = sample_trajectory
+    #     return trajectories
     
     def generate_data(self, W, n_samples):
         T = W.shape[0]
@@ -84,10 +95,9 @@ class LotkaVolterra(System):
         task_data = np.zeros((T, self.Nt, n_samples, 2))
         for t in range(T):
             w = W[t]
+            environment = self.define_environment(w)
             trajectories = self.simulate(
-                self.V_star,
-                self.c_star,
-                w,
+                environment,
                 x0_values[t],
                 diff=False
             )

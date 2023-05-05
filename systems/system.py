@@ -20,7 +20,7 @@ class System(nn.Module):
             return self.V_star(x)@w + self.c_star(x)
         return environment
 
-    def generate_data(self, W):
+    def generate_data(self, W, n_samples):
         raise NotImplementedError
     
     def generate_test_data(self):
@@ -30,7 +30,7 @@ class System(nn.Module):
         return self.generate_data(self.W_train, self.training_task_n_samples)
     
     def generate_adaptation_data(self):
-        return self.generate_data(self.W_adaptation, self.test_task_samples)
+        return self.generate_data(self.W_adaptation, self.adaptation_task_n_samples)
     
     def test_model(self, model):
         raise NotImplementedError

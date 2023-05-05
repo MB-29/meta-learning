@@ -71,7 +71,7 @@ meta_model = TaskLinearMetaModel(V_net, c_net)
 task_models = meta_model.define_task_models(W)
 # W_calibration = 
 
-n_gradient = 50000
+n_gradient = 5000
 test_interval = n_gradient // 100
 W_test_values, V_test_values = [], []
 loss_values = np.zeros(n_gradient)
@@ -83,8 +83,16 @@ for step in tqdm(range(n_gradient)):
     loss = 0
     for t in range(meta_model.T):
         model = meta_model.task_models[t]
+
         predictions = model(grid)   
-        loss += loss_function(y_target[:, :, t], predictions)
+        task_loss = loss_function(y_target[:, :, t], predictions)
+
+        # task_data = torch.tensor(training_data[t, :, :, :], dtype=torch.float)
+        # task_x0_values = task_data[0, :, :]
+        # predictions = system.simulate(model, task_x0_values, diff=True)
+        # task_loss = loss_function(predictions, task_data)
+
+        loss += task_loss
 
     # loss = system.trajectory_loss(meta_model.W, meta_model.V, meta_model.c, training_data)
     # print(f'loss = {loss}')
