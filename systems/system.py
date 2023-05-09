@@ -23,14 +23,14 @@ class System(nn.Module):
     def generate_data(self, W, n_samples):
         raise NotImplementedError
     
-    def generate_test_data(self):
+    def generate_V_data(self):
         raise NotImplementedError
     
     def generate_training_data(self):
         return self.generate_data(self.W_train, self.training_task_n_samples)
     
-    def generate_adaptation_data(self):
-        return self.generate_data(self.W_adaptation, self.adaptation_task_n_samples)
+    def generate_test_data(self):
+        return self.generate_data(self.W_test, self.test_task_n_samples)
     
     def test_model(self, model):
         raise NotImplementedError

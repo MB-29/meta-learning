@@ -69,7 +69,7 @@ class TaskLinearMetaModel(nn.Module):
         self.c_hat = nn.Sequential(self.c, layer) if self.c is not None else None
         return self.V_hat, self.W_hat
     
-    def adapt_task_model(self, points, targets):
+    def adapt_task_model(self, points, targets, n_steps=None):
         v_values = self.V_hat(points)
         c_values = self.c(points).detach() if self.c is not None else torch.zeros_like(targets)
         
@@ -100,7 +100,6 @@ class MAML(l2la.MAML):
 
     def __init__(self, net, lr, first_order=False, n_adaptation_steps=1) -> None:
         super().__init__(net, lr, first_order=first_order)
-        self.net = net
         self.lr = lr
         self.n_adaptation_steps = n_adaptation_steps
         
@@ -112,7 +111,9 @@ class MAML(l2la.MAML):
     def adapt_task_model(self, points, targets, n_steps):
         learner = self.clone()
         for adaptation_step in range(n_steps):
+            # print('adapt')
             train_error = loss_function(learner(points), targets)
+            # print(f'adapt, step{adaptation_step}')
             learner.adapt(train_error)
         return learner
     # def define_task_models(self, training_sources, training_targets):

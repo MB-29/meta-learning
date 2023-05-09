@@ -131,19 +131,19 @@ class LotkaVolterra(System):
 
 
 
-    def evaluate_model(self, meta_model):
+    # def evaluate_model(self, meta_model):
 
-        test_data = self.test_data
-        test_data = test_data if test_data is not None else self.generate_test_data()
-        V, c = meta_model.V, meta_model.c
-        for t in range(self.T_test):
-            w = self.W_test[t:t+1]
-            adaptation_trajectory = self.generate_data(w, n_samples=1)
-            adapted_model = meta_model.adapt(x, y)
-            w_hat = adapted_model.w
-        predictions = self.simulate(V, c, W_adapt)
-        mse = np.mean((predictions - test_data)**2)
-        return mse
+    #     test_data = self.test_data
+    #     test_data = test_data if test_data is not None else self.generate_test_data()
+    #     V, c = meta_model.V, meta_model.c
+    #     for t in range(self.T_test):
+    #         w = self.W_test[t:t+1]
+    #         adaptation_trajectory = self.generate_data(w, n_samples=1)
+    #         adapted_model = meta_model.adapt(x, y)
+    #         w_hat = adapted_model.w
+    #     predictions = self.simulate(V, c, W_adapt)
+    #     mse = np.mean((predictions - test_data)**2)
+    #     return mse
 
 
 

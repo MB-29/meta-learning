@@ -24,18 +24,18 @@ class Dipole(System):
     d, m, r = 2, 1, 2
 
     U_values_train = np.array([1., 2., 3.])
-    p_values_train = np.array([0.1, 0.5, 1.0])
+    p_values_train = np.array([0.02, 0.1, 0.2])
     parameter_grid_train = np.meshgrid(U_values_train, p_values_train)
     W_train = np.dstack(parameter_grid_train).reshape(-1, 2)
 
     training_task_n_samples = 1
 
-    U_values_adaptation = np.array([1.5, 2.5])
-    p_values_adaptation = np.array([0.2, 0.7])
+    U_values_adaptation = np.array([1.5, 4.])
+    p_values_adaptation = np.array([0.08, 0.3])
     parameter_grid_adaptation = np.meshgrid(U_values_adaptation, p_values_adaptation)
-    W_adaptation = np.dstack(parameter_grid_adaptation).reshape(-1, 2)
+    W_test = np.dstack(parameter_grid_adaptation).reshape(-1, 2)
 
-    adaptation_task_n_samples = 1
+    test_task_n_samples = 1
 
     n_points = 20
     x1_values = torch.linspace(-1, 1, n_points)
@@ -73,7 +73,7 @@ class Dipole(System):
             data[task_index] = potential
         return data
     
-    def generate_test_data(self):
+    def generate_V_data(self):
         return self.V_star(self.grid)
     
     def predict(self, model):
