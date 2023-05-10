@@ -7,8 +7,8 @@ from tqdm import tqdm
 from model import TaskLinearMetaModel, TaskLinearModel, MAML
 from systems.dipole import Dipole
 
-# np.random.seed(5)
-# torch.manual_seed(5)
+np.random.seed(5)
+torch.manual_seed(5)
 
 system = Dipole()
 W_train = system.W_train
@@ -17,7 +17,14 @@ W_test = system.W_test
 T_test = W_test.shape[0]
 V_target = system.generate_V_data()
 
-adaptation_indices = np.random.randint(400, size=100)
+
+training_data = system.generate_training_data()
+test_data = system.generate_test_data()
+
+
+# adaptation_indices = np.random.randint(400, size=100)
+adaptation_indices = np.random.randint(400, size=10)
+# adaptation_indices = np.arange(400)
 
 # for index in range(system.T):
 #     plt.subplot(3, 3, index+1)
@@ -25,13 +32,9 @@ adaptation_indices = np.random.randint(400, size=100)
 #     plt.title(f'U = {w[0]}, p = {w[1]}')
 #     # system.plot_potential(w)
 #     potential_map = system.define_environment(torch.tensor(w, dtype=torch.float))
-#     system.plot_field(potential_map)
+#     # system.plot_field(potential_map)
+#     system.plot_potential(potential_map)
 # plt.show()
-
-training_data = system.generate_training_data()
-test_data = system.generate_test_data()
-
-n_adapt_steps = 1
 
 V_net = torch.nn.Sequential(
     nn.Linear(2, 16),
@@ -47,20 +50,20 @@ meta_model = TaskLinearMetaModel(V_net, c=None)
 training_task_models = meta_model.define_task_models(W_values)
 
 net = torch.nn.Sequential(
-    nn.Linear(2, 8),
+    nn.Linear(2, 16),
     nn.Tanh(),
-    nn.Linear(8, 2),
+    nn.Linear(16, 16),
     # nn.Tanh(),
-    # nn.Linear(16, 2),
+    nn.Linear(16, 2),
     nn.Tanh(),
     nn.Linear(2, 1)
 )
-meta_model = MAML(net, lr=0.005, first_order=False)
+meta_model = MAML(net, lr=0.01, first_order=False)
 
 
 
-n_gradient = 500
-test_interval = n_gradient // 100
+n_gradient = 5000
+test_interval = max(n_gradient // 100, 1)
 W_test_values, V_test_values = [], []
 adaptation_error_values = []
 loss_values = np.zeros(n_gradient)
@@ -68,18 +71,21 @@ optimizer = torch.optim.Adam(meta_model.parameters(), lr=0.005)
 # optimizer_weights = torch.optim.Adam(W_values, lr=0.01)
 loss_function = nn.MSELoss()
 for step in tqdm(range(n_gradient)):
+    optimizer.zero_grad()
+    
     loss = 0
     for task_index in range(T_train):
-        task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
         task_points = system.grid
+        task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
         model = meta_model.get_training_task_model(task_index, task_points, task_targets)
-        predictions = system.predict(model)
-        loss += loss_function(predictions, task_targets)
+        task_predictions = system.predict(model).squeeze()
+        # task_predictions = model(system.grid)
+        task_loss = loss_function(task_predictions, task_targets)
+        loss += task_loss
+    loss.backward()
 
     loss_values[step] = loss
 
-    optimizer.zero_grad()
-    loss.backward()
     optimizer.step()
 
     if step % test_interval != 0:
@@ -91,9 +97,16 @@ for step in tqdm(range(n_gradient)):
     for test_task_index in range(T_test):
         task_targets =  torch.tensor(test_data[test_task_index], dtype=torch.float)
         adaptation_targets = task_targets[adaptation_indices]
-        adapted_model = meta_model.adapt_task_model(adaptation_points, adaptation_targets, 100)
+        # print(f'test task {test_task_index}')
+        # print(f'task {test_task_index},  model {meta_model.learner.module[0].weight}')
+        adapted_model = meta_model.adapt_task_model(adaptation_points, adaptation_targets, 50)
+        # print(f'predict')
+        # print(f'task {test_task_index}, adapted model {adapted_model.module[0].weight}')
+        # print(f'task {test_task_index}, net {net[0].weight}')
+        # print(f'targets {adaptation_targets}')
+
         # print(f'adapted w = {adapted_model.w}')
-        predictions = adapted_model(system.grid)
+        predictions = system.predict(adapted_model).squeeze()
         task_adaptation_error = loss_function(predictions, task_targets)
         adaptation_error[test_task_index] = task_adaptation_error
     adaptation_error_values.append(adaptation_error)
@@ -116,7 +129,7 @@ plt.subplot(2, 1, 1)
 plt.yscale('log')
 plt.plot(loss_values)
 plt.subplot(2, 1, 2)
-# plt.yscale('log')
+plt.yscale('log')
 plt.plot(np.array(adaptation_error_values))
 # plt.yscale('log')
 plt.show()
@@ -140,22 +153,24 @@ for index in range(T_test):
     plt.subplot(2, T_test, index+1)
     w = W_test[index]
     # w = meta_model.W[index]
-    plt.title(f'U = {w[0]:3d}, p = {w[1]:3d}')
-    # system.plot_potential(w)
+    plt.title(f'U = {w[0]:0.2f}, p = {w[1]:0.2f}')
     task_targets =  torch.tensor(test_data[index], dtype=torch.float)
     adaptation_points = system.grid[adaptation_indices]
     adaptation_targets = task_targets[adaptation_indices]
-    adapted_model = meta_model.adapt_task_model(adaptation_points, adaptation_targets)
-    print(f'w {w}')
-    print(f'adapted w {adapted_model.w}')
-    print(f'adaptation targets {adaptation_targets}')
+    adapted_model = meta_model.adapt_task_model(adaptation_points, adaptation_targets, 500)
+    # print(f'w {w}')
+    # print(f'adapted w {adapted_model.w}')
+    # print(f'adapted model {adapted_model.module[0].weight}')
+    # print(f'adaptation targets {adaptation_targets}')
 
     system.plot_field(adapted_model)
+    # system.plot_potential(adapted_model)
     plt.scatter(*adaptation_points.T, color="red", s=1, marker='x')
 
     plt.subplot(2, T_test, index+1+T_test)
     potential_map = system.define_environment(torch.tensor(w, dtype=torch.float))
     system.plot_field(potential_map)
+    # system.plot_potential(potential_map)
 
 plt.show()
 

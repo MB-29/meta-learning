@@ -10,17 +10,21 @@ from model import MAML
 
 
 
-np.random.seed(5)
-torch.manual_seed(5)
+# np.random.seed(5)
+# torch.manual_seed(5)
 
 system = Dipole()
 W_train = system.W_train
-T, r = W_train.shape
-V_target = system.generate_test_data()
-
+T_train, r = W_train.shape
 W_test = system.W_test
 T_test = W_test.shape[0]
-V_target = system.generate_test_data()
+V_target = system.generate_V_data()
+
+
+training_data = system.generate_training_data()
+test_data = system.generate_test_data()
+
+adaptation_indices = np.arange(400)
 
 # for index in range(system.T):
 #     plt.subplot(3, 3, index+1)
@@ -31,16 +35,16 @@ V_target = system.generate_test_data()
 #     system.plot_field(potential_map)
 # plt.show()
 
-training_data = system.generate_training_data()
-test_data = system.generate_test_data()
+# training_data = system.generate_training_data()
+# test_data = system.generate_test_data()
 
 m = 1
 net = torch.nn.Sequential(
     nn.Linear(2, 16),
     nn.Tanh(),
-    # nn.Linear(32, 32),
-    # nn.Tanh(),
     nn.Linear(16, 2),
+    # nn.Tanh(),
+    # nn.Linear(16, 2),
     nn.Tanh(),
     nn.Linear(2, 1)
 )
@@ -50,12 +54,8 @@ meta_model = MAML(net, lr=0.001, first_order=False)
 
 # W_calibration = 
 
-n_adaptation = 1
-n_adapt_steps = 1
-
 n_gradient = 500
 test_interval = n_gradient // 100
-W_test_values, V_test_values = [], []
 adaptation_error_values = []
 loss_values = np.zeros(n_gradient)
 optimizer = torch.optim.Adam(meta_model.parameters(), lr=0.005)
@@ -64,16 +64,13 @@ loss_function = nn.MSELoss()
 for step in tqdm(range(n_gradient)):
     optimizer.zero_grad()
     loss = 0
-    for task_index in range(7):
+    for task_index in range(T_train):
         # learner = meta_model.clone()
         task_points = system.grid
         task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
-        # for adaptation_step in range(n_adaptation):     
-        #     train_error = loss_function(learner(task_points), task_targets)
-        #     learner.adapt(train_error)
-        learner = meta_model.get_training_task_model(task_index, task_points, task_targets)
-        task_predictions = learner(system.grid)
-        task_loss = loss_function(task_predictions.squeeze(), task_targets)
+        model = meta_model.get_training_task_model(task_index, task_points, task_targets)
+        task_predictions = model(system.grid).squeeze()
+        task_loss = loss_function(task_predictions, task_targets)
         # task_loss.backward()
         loss += task_loss
     loss.backward()
@@ -90,17 +87,18 @@ for step in tqdm(range(n_gradient)):
     # T_test = 2
     adaptation_error = np.zeros(T_test)
     for test_task_index in range(T_test):
-        task_points = system.grid
-        adaptation_task_targets = torch.tensor(test_data[test_task_index], dtype=torch.float)
+        test_targets = torch.tensor(test_data[test_task_index], dtype=torch.float)
         # for adaptation_step in range(n_adaptation):     
-        #     train_error = loss_function(learner(task_points), adaptation_task_targets)
+        #     train_error = loss_function(learner(task_points), adaptation_targets)
         # #     learner.adapt(train_error)
-        # learner = meta_model.adapt_task_model(system.grid, adaptation_task_targets, 3)
-        adaptation_points = system.grid
-        adapted_model = meta_model.adapt_task_model(adaptation_points, adaptation_task_targets, 50)
+        # learner = meta_model.adapt_task_model(system.grid, adaptation_targets, 3)
+        adaptation_points = system.grid[adaptation_indices]
+        adaptation_points = system.grid[adaptation_indices]
+        adaptation_targets = test_targets[adaptation_indices]
+        adapted_model = meta_model.adapt_task_model(adaptation_points, adaptation_targets, 50)
         # # predictions = adapted_model(system.grid)
-        task_predictions = adapted_model(system.grid)
-        adapted_task_loss = loss_function(task_predictions.squeeze(), adaptation_task_targets)
+        test_task_predictions = adapted_model(system.grid).squeeze()
+        adapted_task_loss = loss_function(test_task_predictions, adaptation_targets)
         # learner = meta_model.clone()
         # predictions = learner(system.grid)
         # task_adaptation_error = loss_function(predictions, adaptation_task_targets)

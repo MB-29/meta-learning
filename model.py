@@ -96,12 +96,13 @@ class TaskLinearMetaModel(nn.Module):
         return self.task_models[task_index]
     
 
-class MAML(l2la.MAML):
+class MAML(nn.Module):
 
     def __init__(self, net, lr, first_order=False, n_adaptation_steps=1) -> None:
-        super().__init__(net, lr, first_order=first_order)
+        super().__init__()
         self.lr = lr
         self.n_adaptation_steps = n_adaptation_steps
+        self.learner = l2la.MAML(net, lr, first_order=False)
         
     
     def get_training_task_model(self, task_index, task_points, task_targets, n_adaptation_steps=None):
@@ -109,10 +110,11 @@ class MAML(l2la.MAML):
         return self.adapt_task_model(task_points, task_targets, n_steps)
     
     def adapt_task_model(self, points, targets, n_steps):
-        learner = self.clone()
+        learner = self.learner.clone()
+        # print(f'adapt {n_steps} steps')
+        # print(f'targets {targets[:10]}')
         for adaptation_step in range(n_steps):
-            # print('adapt')
-            train_error = loss_function(learner(points), targets)
+            train_error = loss_function(learner(points).squeeze(), targets.squeeze())
             # print(f'adapt, step{adaptation_step}')
             learner.adapt(train_error)
         return learner

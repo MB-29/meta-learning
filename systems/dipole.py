@@ -24,14 +24,14 @@ class Dipole(System):
     d, m, r = 2, 1, 2
 
     U_values_train = np.array([1., 2., 3.])
-    p_values_train = np.array([0.02, 0.1, 0.2])
+    p_values_train = np.array([0.1, 0.2, 0.5])
     parameter_grid_train = np.meshgrid(U_values_train, p_values_train)
     W_train = np.dstack(parameter_grid_train).reshape(-1, 2)
 
     training_task_n_samples = 1
 
     U_values_adaptation = np.array([1.5, 4.])
-    p_values_adaptation = np.array([0.08, 0.3])
+    p_values_adaptation = np.array([0.25, 0.7])
     parameter_grid_adaptation = np.meshgrid(U_values_adaptation, p_values_adaptation)
     W_test = np.dstack(parameter_grid_adaptation).reshape(-1, 2)
 
@@ -97,7 +97,7 @@ class Dipole(System):
         # loss = self.loss_function(data, predictions)
 
     def plot_potential(self, potential_map):
-        potential = potential_map(self.grid)
+        potential = potential_map(self.grid).detach().numpy()
         plt.pcolormesh(self.grid_x1,
                        self.grid_x2,
                        potential.reshape((self.n_points, self.n_points)),
