@@ -1,10 +1,9 @@
 import numpy as np
 import torch
 import torch.nn as nn
-
 import learn2learn.algorithms as l2la
 
-loss_function = nn.MSELoss()
+from models.metamodel import MetaModel
 
 class TaskLinearModel(nn.Module):
 
@@ -12,33 +11,35 @@ class TaskLinearModel(nn.Module):
         super().__init__()
         self.w = w
         self.V = v
-        self.c = c if c is not None else lambda x:0
+        self.c = c 
 
     def forward(self, x):
         assert x.ndim > 1
         V = self.V(x) 
-        return V @ self.w + self.c(x)
+        y = V @ self.w
+        y = y if self.c is None else y+self.c(x)
+        return y
     
     def d_flow(self, t, x):
         return self.forward(x)
 
 
-class OneStepModel(nn.Module):
+# class OneStepModel(nn.Module):
 
-    def __init__(self, net, targets, alpha):
-        self.net = net
-        self.targets = targets
-        self.alpha = alpha
+    # def __init__(self, net, targets, alpha):
+    #     self.net = net
+    #     self.targets = targets
+    #     self.alpha = alpha
 
-    def one_step_forward(self, x):
-        predictions = self.net(x)
-        task_loss = nn.MSELoss()(predictions, self.targets)
-        task_loss.backward(create_graph=True)
-        for tensor in self.net.parameters():
-            tensor.data += self.alpha*tensor.grad
-        return self.net(self)
+    # def one_step_forward(self, x):
+    #     predictions = self.net(x)
+    #     task_loss = nn.MSELoss()(predictions, self.targets)
+    #     task_loss.backward(create_graph=True)
+    #     for tensor in self.net.parameters():
+    #         tensor.data += self.alpha*tensor.grad
+    #     return self.net(self)
 
-class TaskLinearMetaModel(nn.Module):
+class TaskLinearMetaModel(MetaModel):
 
     def __init__(self, V, c=None, W=None) -> None:
         super().__init__()
@@ -81,7 +82,8 @@ class TaskLinearMetaModel(nn.Module):
         model = TaskLinearModel(w, self.V_hat, self.c_hat)
         return model
 
-    def define_task_models(self, W):
+    def define_task_models(self, W=None):
+        W = W if W is not None else torch.randn(self.T, self.r)
         self.W = nn.Parameter(W)
         self.T, self.r = W.shape
         # self.W = W
@@ -94,37 +96,5 @@ class TaskLinearMetaModel(nn.Module):
     
     def get_training_task_model(self, task_index, task_points=None, task_targets=None):
         return self.task_models[task_index]
-    
 
-class MAML(nn.Module):
 
-    def __init__(self, net, lr, first_order=False, n_adaptation_steps=1) -> None:
-        super().__init__()
-        self.lr = lr
-        self.n_adaptation_steps = n_adaptation_steps
-        self.learner = l2la.MAML(net, lr, first_order=False)
-        
-    
-    def get_training_task_model(self, task_index, task_points, task_targets, n_adaptation_steps=None):
-        n_steps = self.n_adaptation_steps if n_adaptation_steps is not None else 1
-        return self.adapt_task_model(task_points, task_targets, n_steps)
-    
-    def adapt_task_model(self, points, targets, n_steps):
-        learner = self.learner.clone()
-        # print(f'adapt {n_steps} steps')
-        # print(f'targets {targets[:10]}')
-        for adaptation_step in range(n_steps):
-            train_error = loss_function(learner(points).squeeze(), targets.squeeze())
-            # print(f'adapt, step{adaptation_step}')
-            learner.adapt(train_error)
-        return learner
-    # def define_task_models(self, training_sources, training_targets):
-    #     self.T = len(training_sources)
-    #     # self.W = W
-    #     self.task_models = []
-    #     for t in range(self.T):
-    #         task_targets = training_targets[t]
-    #         self.task_models = []
-    #         model = OneStepModel(self.net, task_targets)
-    #         self.task_models.append(model)
-    #     return self.task_models

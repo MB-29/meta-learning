@@ -104,7 +104,7 @@ class Dipole(System):
                        cmap='gray'
                        )
         
-    def plot_field(self, potential_map):
+    def plot_field(self, potential_map, **kwargs):
         field_map = derive_field(potential_map)
         field = field_map(self.grid)
         vector_x = field[:, 0].reshape(
@@ -118,7 +118,8 @@ class Dipole(System):
             self.grid_x2.numpy().T,
             vector_x.T,
             vector_y.T,
-            color='black',
+            # color='black',
             linewidth=linewidth*2,
             arrowsize=.8,
-            density=.8)
+            density=.5,
+            **kwargs)
