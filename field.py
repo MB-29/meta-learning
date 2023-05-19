@@ -4,8 +4,9 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm 
 
-from models import TaskLinearMetaModel, TaskLinearModel, MAML
+from models import TaskLinearMetaModel, TaskLinearModel, MAML, CoDA
 from systems.dipole import Dipole
+from hypnettorch.mnets import MLP
 
 np.random.seed(5)
 torch.manual_seed(5)
@@ -22,19 +23,21 @@ training_data = system.generate_training_data()
 test_data = system.generate_test_data()
 
 
-test_n_samples = 10
-adaptation_indices = np.random.randint(400, size=test_n_samples)
+shots = 400
+adaptation_indices = np.random.randint(400, size=shots)
+adaptation_points = system.grid[adaptation_indices]
+
 # adaptation_indices = np.arange(400)
 
-for index in range(system.T):
-    plt.subplot(3, 3, index+1)
-    w = system.W_train[index]
-    plt.title(f'U = {w[0]}, p = {w[1]}')
-    # system.plot_potential(w)
-    potential_map = system.define_environment(torch.tensor(w, dtype=torch.float))
-    system.plot_field(potential_map)
-    # system.plot_potential(potential_map)
-plt.show()
+# for index in range(system.T):
+#     plt.subplot(3, 3, index+1)
+#     w = system.W_train[index]
+#     plt.title(f'U = {w[0]}, p = {w[1]}')
+#     # system.plot_potential(w)
+#     potential_map = system.define_environment(torch.tensor(w, dtype=torch.float))
+#     system.plot_field(potential_map)
+#     # system.plot_potential(potential_map)
+# plt.show()
 
 V_net = torch.nn.Sequential(
     nn.Linear(2, 16),
@@ -53,20 +56,26 @@ net = torch.nn.Sequential(
     nn.Linear(2, 16),
     nn.Tanh(),
     nn.Linear(16, 16),
-    # nn.Tanh(),
+    nn.Tanh(),
     nn.Linear(16, 2),
     nn.Tanh(),
     nn.Linear(2, 1)
 )
+
+# T_train = 1
 maml = MAML(net, lr=0.01, first_order=False)
+mnet = MLP(n_in=2, n_out=1, hidden_layers=[16, 2], activation_fn=nn.Tanh())
+coda = CoDA(T_train, 2, mnet)
 
 metamodel_choice = {
     'tlml': tlml,
-    'maml': maml
+    'maml': maml,
+    'coda': coda,
 }
 
-metamodel_name = 'maml'
 metamodel_name = 'tlml'
+# metamodel_name = 'maml'
+metamodel_name = 'coda'
 metamodel = metamodel_choice[metamodel_name]
 
 
@@ -82,18 +91,27 @@ for step in tqdm(range(n_gradient)):
     optimizer.zero_grad()
     
     loss = 0
+    # print(f'training {metamodel.net[-1].weight}')
+    # print(f'training net {net[-1].weight}')
+    # print(f'training W {metamodel.W[:10]}')
+
     for task_index in range(T_train):
         task_points = system.grid
         task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
         task_model = metamodel.get_training_task_model(task_index, task_points, task_targets)
         task_predictions = system.predict(task_model).squeeze()
+        # task_predictions = metamodel.task_models[0](system.grid).squeeze()
+        # print(f'prediction {task_predictions[:10]}')
         # task_predictions = model(system.grid)
         task_loss = loss_function(task_predictions, task_targets)
+        # print(f'task {task_index}, loss {task_loss}')
         loss += task_loss
+        # print(f'task {task_index}, loss {loss}')
+        # print(f'task {task_index}, model {task_model.net[-1].weight}')
+    # loss += metamodel.W.norm()
     loss.backward()
-
-    loss_values[step] = loss
-
+    loss_values[step] = loss.item()
+    # loss.backward(retain_graph=True)
     optimizer.step()
 
     if step % test_interval != 0:
@@ -101,7 +119,6 @@ for step in tqdm(range(n_gradient)):
     # print(f'step {step}')
 
     adaptation_error = np.zeros(T_test)
-    adaptation_points = system.grid[adaptation_indices]
     for test_task_index in range(T_test):
         task_targets =  torch.tensor(test_data[test_task_index], dtype=torch.float)
         adaptation_targets = task_targets[adaptation_indices]
@@ -119,21 +136,21 @@ for step in tqdm(range(n_gradient)):
         adaptation_error[test_task_index] = task_adaptation_error
     adaptation_error_values.append(adaptation_error)
 
-    if not isinstance(metamodel, TaskLinearMetaModel):
-        continue
+    # if metamodel_name != 'tlml':
+    #     continue    
 
-    V_hat, W_hat = metamodel.recalibrate(W_train[:2])
-    # V_hat, W_hat = metamodel.recalibrate(W_train)
-    W_error = torch.norm(W_hat - W_train)
-    W_test_values.append(W_error)
+    # V_hat, W_hat = metamodel.calibrate(W_train[:2])
+    # # V_hat, W_hat = metamodel.calibrate(W_train)
+    # W_error = torch.norm(W_hat - W_train)
+    # W_test_values.append(W_error)
 
-    V_predictions = V_hat(system.grid)
-    V_error = loss_function(V_predictions, V_target)
-    V_test_values.append(V_error.data)
+    # V_predictions = V_hat(system.grid)
+    # V_error = loss_function(V_predictions, V_target)
+    # V_test_values.append(V_error.data)
 
-# path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.dat'
-# with open(path, 'wb') as file:
-#     torch.save(metamodel, file)
+path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.dat'
+with open(path, 'wb') as file:
+    torch.save(metamodel, file)
 
 plt.subplot(2, 1, 1)
 plt.yscale('log')

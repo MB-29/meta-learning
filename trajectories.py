@@ -106,8 +106,8 @@ for step in tqdm(range(n_gradient)):
     if step % test_interval != 0:
         continue
     # print(f'step {step}')
-    # V_hat, W_hat = meta_model.recalibrate(W_train[:2])
-    V_hat, W_hat = meta_model.recalibrate(W_train)
+    # V_hat, W_hat = meta_model.calibrate(W_train[:2])
+    V_hat, W_hat = meta_model.calibrate(W_train)
     W_error = torch.norm(W_hat - W_train)
     W_test_values.append(W_error)
 
