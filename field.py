@@ -49,8 +49,8 @@ V_net = torch.nn.Sequential(
 # c_net = nn.Linear(2, 2)
 W_values = torch.abs(torch.randn(T_train, r))
 # torch.randn(T, 2, requires_grad=True)
-tlml = TaskLinearMetaModel(V_net, c=None)
-training_task_models = tlml.define_task_models(W_values)
+tldr = TaskLinearMetaModel(V_net, c=None)
+training_task_models = tldr.define_task_models(W_values)
 
 net = torch.nn.Sequential(
     nn.Linear(2, 16),
@@ -68,14 +68,14 @@ mnet = MLP(n_in=2, n_out=1, hidden_layers=[16, 2], activation_fn=nn.Tanh())
 coda = CoDA(T_train, 2, mnet)
 
 metamodel_choice = {
-    'tlml': tlml,
-    'maml': maml,
+    'tldr': tldr,
     'coda': coda,
+    'maml': maml,
 }
 
-metamodel_name = 'tlml'
-# metamodel_name = 'maml'
+metamodel_name = 'tldr'
 metamodel_name = 'coda'
+metamodel_name = 'maml'
 metamodel = metamodel_choice[metamodel_name]
 
 
@@ -136,9 +136,9 @@ for step in tqdm(range(n_gradient)):
         adaptation_error[test_task_index] = task_adaptation_error
     adaptation_error_values.append(adaptation_error)
 
-    # if metamodel_name != 'tlml':
+    # if metamodel_name != 'tldr':
     #     continue    
-
+    
     # V_hat, W_hat = metamodel.calibrate(W_train[:2])
     # # V_hat, W_hat = metamodel.calibrate(W_train)
     # W_error = torch.norm(W_hat - W_train)
@@ -151,6 +151,7 @@ for step in tqdm(range(n_gradient)):
 path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.dat'
 with open(path, 'wb') as file:
     torch.save(metamodel, file)
+
 
 plt.subplot(2, 1, 1)
 plt.yscale('log')

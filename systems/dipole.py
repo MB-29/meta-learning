@@ -69,8 +69,8 @@ class Dipole(System):
         for task_index in range(T):
             w = W[task_index]
             environment = self.define_environment(w)
-            potential = environment(self.grid)
-            data[task_index] = potential
+            potential_values = environment(self.grid)
+            data[task_index] = potential_values
         return data
     
     def generate_V_data(self):
@@ -119,7 +119,7 @@ class Dipole(System):
             vector_x.T,
             vector_y.T,
             # color='black',
-            linewidth=linewidth*2,
+            linewidth=linewidth*3,
             arrowsize=.8,
             density=.5,
             **kwargs)
