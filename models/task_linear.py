@@ -64,7 +64,7 @@ class TaskLinearMetaModel(MetaModel):
         self.estimator = self.estimate_transform(W_star)
         self.W_hat = self.W.detach() @ torch.tensor(self.estimator, dtype=torch.float)
 
-        transform = np.linalg.inv(self.estimator)
+        transform = np.linalg.inv(self.estimator + 1e-7*np.eye(self.r))
         tensor = torch.tensor(transform, dtype=torch.float, requires_grad=False)
         layer = nn.Linear(self.r, self.r, bias=False)
         layer.weight.data = tensor
