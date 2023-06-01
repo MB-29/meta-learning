@@ -10,18 +10,17 @@ loss_function = nn.MSELoss()
 
 class MAML(MetaModel):
 
-    def __init__(self, net, lr, first_order=False, n_adaptation_steps=1) -> None:
-        super().__init__()
+    def __init__(self, meta_dataset, net, lr, first_order=False, n_adaptation_steps=1) -> None:
+        super().__init__(meta_dataset)
         self.lr = lr
         self.n_adaptation_steps = n_adaptation_steps
         self.learner = l2la.MAML(net, lr, first_order=False)
         
     
     def get_training_task_model(self, task_index, task_points, task_targets, n_adaptation_steps=None):
-        n_steps = self.n_adaptation_steps if n_adaptation_steps is not None else 1
-        return self.adapt_task_model(task_points, task_targets, n_steps)
+        return self.fit_step(task_points, task_targets, self.n_adaptation_steps)
     
-    def adapt_task_model(self, points, targets, n_steps):
+    def gradient_step(self, points, targets, n_steps):
         learner = self.learner.clone()
         # print(f'adapt {n_steps} steps')
         # print(f'targets {targets[:10]}')
@@ -30,13 +29,7 @@ class MAML(MetaModel):
             # print(f'adapt, step{adaptation_step}')
             learner.adapt(train_error)
         return learner
-    # def define_task_models(self, training_sources, training_targets):
-    #     self.T = len(training_sources)
-    #     # self.W = W
-    #     self.task_models = []
-    #     for t in range(self.T):
-    #         task_targets = training_targets[t]
-    #         self.task_models = []
-    #         model = OneStepModel(self.net, task_targets)
-    #         self.task_models.append(model)
-    #     return self.task_models
+    
+    def adapt_task_model(self, data, n_steps):
+        points, targets = data
+        return self.gradient_step(points, targets, n_steps)

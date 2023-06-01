@@ -20,10 +20,11 @@ V_target = system.generate_V_data()
 
 
 training_data = system.generate_training_data()
+meta_dataset = T_train * [training_data]
 test_data = system.generate_test_data()
 
 
-shots = 400
+shots = 3
 adaptation_indices = np.random.randint(400, size=shots)
 adaptation_points = system.grid[adaptation_indices]
 
@@ -47,10 +48,10 @@ V_net = torch.nn.Sequential(
     nn.Linear(16, r)
 )
 # c_net = nn.Linear(2, 2)
-W_values = torch.abs(torch.randn(T_train, r))
+# W_values = torch.abs(torch.randn(T_train, r))
 # torch.randn(T, 2, requires_grad=True)
-tldr = TaskLinearMetaModel(V_net, c=None)
-training_task_models = tldr.define_task_models(W_values)
+tldr = TaskLinearMetaModel(meta_dataset, r, V_net, c=None)
+# training_task_models = tldr.define_task_models(W_values)
 
 net = torch.nn.Sequential(
     nn.Linear(2, 16),
@@ -63,9 +64,9 @@ net = torch.nn.Sequential(
 )
 
 # T_train = 1
-maml = MAML(net, lr=0.01, first_order=False)
+maml = MAML(meta_dataset, net, lr=0.01, first_order=False)
 mnet = MLP(n_in=2, n_out=1, hidden_layers=[16, 2], activation_fn=nn.Tanh())
-coda = CoDA(T_train, 2, mnet)
+coda = CoDA(meta_dataset, 2, mnet)
 
 metamodel_choice = {
     'tldr': tldr,
@@ -74,8 +75,8 @@ metamodel_choice = {
 }
 
 metamodel_name = 'tldr'
-metamodel_name = 'coda'
-metamodel_name = 'maml'
+# metamodel_name = 'coda'
+# metamodel_name = 'maml'
 metamodel = metamodel_choice[metamodel_name]
 
 
@@ -98,7 +99,7 @@ for step in tqdm(range(n_gradient)):
     for task_index in range(T_train):
         task_points = system.grid
         task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
-        task_model = metamodel.get_training_task_model(task_index, task_points, task_targets)
+        task_model = metamodel.training_parametrizer(task_index)
         task_predictions = system.predict(task_model).squeeze()
         # task_predictions = metamodel.task_models[0](system.grid).squeeze()
         # print(f'prediction {task_predictions[:10]}')
@@ -124,7 +125,7 @@ for step in tqdm(range(n_gradient)):
         adaptation_targets = task_targets[adaptation_indices]
         # print(f'test task {test_task_index}')
         # print(f'task {test_task_index},  model {metamodel.learner.module[0].weight}')
-        adapted_model = metamodel.adapt_task_model(adaptation_points, adaptation_targets, 50)
+        adapted_model = metamodel.adapt_task_model(adaptation_points, adaptation_targets, n_steps=50)
         # print(f'predict')
         # print(f'task {test_task_index}, adapted model {adapted_model.module[0].weight}')
         # print(f'task {test_task_index}, net {net[0].weight}')
@@ -148,9 +149,9 @@ for step in tqdm(range(n_gradient)):
     # V_error = loss_function(V_predictions, V_target)
     # V_test_values.append(V_error.data)
 
-path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.dat'
-with open(path, 'wb') as file:
-    torch.save(metamodel, file)
+# path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.dat'
+# with open(path, 'wb') as file:
+#     torch.save(metamodel, file)
 
 
 plt.subplot(2, 1, 1)
@@ -185,16 +186,14 @@ for index in range(T_test):
     task_targets =  torch.tensor(test_data[index], dtype=torch.float)
     adaptation_points = system.grid[adaptation_indices]
     adaptation_targets = task_targets[adaptation_indices]
-    adapted_model = metamodel.adapt_task_model(adaptation_points, adaptation_targets, 500)
+    adapted_model = metamodel.adapt_task_model(adaptation_points, adaptation_targets, n_steps=10)
     # print(f'w {w}')
     # print(f'adapted w {adapted_model.w}')
     # print(f'adapted model {adapted_model.module[0].weight}')
     # print(f'adaptation targets {adaptation_targets}')
-
     system.plot_field(adapted_model)
     # system.plot_potential(adapted_model)
     plt.scatter(*adaptation_points.T, color="red", s=1, marker='x')
-
     plt.subplot(2, T_test, index+1+T_test)
     potential_map = system.define_environment(torch.tensor(w, dtype=torch.float))
     system.plot_field(potential_map)

@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import learn2learn.algorithms as l2la
 
 from models.metamodel import MetaModel
 
@@ -26,30 +25,36 @@ class TaskLinearModel(nn.Module):
         return self.forward(x)
 
 
-# class OneStepModel(nn.Module):
-
-    # def __init__(self, net, targets, alpha):
-    #     self.net = net
-    #     self.targets = targets≤
-    #     self.alpha = alpha
-
-    # def one_step_forward(self, x):
-    #     predictions = self.net(x)
-    #     task_loss = nn.MSELoss()(predictions, self.targets)
-    #     task_loss.backward(create_graph=True)
-    #     for tensor in self.net.parameters():
-    #         tensor.data += self.alpha*tensor.grad
-    #     return self.net(self)
-
 class TaskLinearMetaModel(MetaModel):
 
-    def __init__(self, V, c=None, W=None) -> None:
-        super().__init__()
+    def __init__(self, meta_dataset, r, V, c=None, W=None) -> None:
+        super().__init__(meta_dataset)
         self.V = V
         self.V_hat = V
-        self.c = c 
+        self.c = c
         self.c_hat = self.c
+        
+        self.T_train = len(meta_dataset)
+        self.r = r
+        W = W if W is not None else torch.randn(self.T_train, self.r)
+        self.W = nn.Parameter(W)
 
+        # self.define_task_models(W)
+
+    # def define_task_models(self, W):
+        
+        # # self.W = W
+        # # self.task_models = []
+        # for t in range(self.T_train):
+        #     w = self.W[t]
+        #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
+        #     self.task_models.append(model)
+        # return self.task_models
+
+    def training_parametrizer(self, task_index):
+        w = self.W[task_index]
+        model = TaskLinearModel(w, self.V_hat, self.c_hat)
+        return model
         # W = W if W is not None else 
 
     def estimate_transform(self, W_star, indices=None):
@@ -83,7 +88,7 @@ class TaskLinearMetaModel(MetaModel):
     #     w = torch.tensor(w_hat, dtype=torch.float)
     #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
     #     return model
-    def adapt_task_model(self, points, targets, n_steps=None):
+    def adapt_task_model(self, points, targets, **kwargs):
         v_values = self.V_hat(points)
         c_values = self.c_hat(points).detach() if self.c is not None else torch.zeros_like(targets)
         
@@ -116,21 +121,7 @@ class TaskLinearMetaModel(MetaModel):
     #         # print(train_error)
     #         # print(f'adapt, step{adaptation_step}')
     #     return model
-    
 
-    def define_task_models(self, W=None):
-        W = W if W is not None else torch.randn(self.T, self.r)
-        self.W = nn.Parameter(W)
-        self.T, self.r = W.shape
-        # self.W = W
-        self.task_models = []
-        for t in range(self.T):
-            w = self.W[t]
-            model = TaskLinearModel(w, self.V_hat, self.c_hat)
-            self.task_models.append(model)
-        return self.task_models
-    
-    def get_training_task_model(self, task_index, task_points=None, task_targets=None):
-        return self.task_models[task_index]
+
 
 
