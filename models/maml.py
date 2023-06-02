@@ -10,15 +10,17 @@ loss_function = nn.MSELoss()
 
 class MAML(MetaModel):
 
-    def __init__(self, meta_dataset, net, lr, first_order=False, n_adaptation_steps=1) -> None:
-        super().__init__(meta_dataset)
+    def __init__(self, T_train, net, lr, n_adaptation_steps=1) -> None:
+        super().__init__(T_train)
         self.lr = lr
         self.n_adaptation_steps = n_adaptation_steps
         self.learner = l2la.MAML(net, lr, first_order=False)
         
     
-    def get_training_task_model(self, task_index, task_points, task_targets, n_adaptation_steps=None):
-        return self.fit_step(task_points, task_targets, self.n_adaptation_steps)
+    def parametrizer(self, task_index, dataset):
+        task_dataset = dataset[task_index]
+        points, targets = task_dataset
+        return self.gradient_step(points, targets, self.n_adaptation_steps)
     
     def gradient_step(self, points, targets, n_steps):
         learner = self.learner.clone()
@@ -33,3 +35,8 @@ class MAML(MetaModel):
     def adapt_task_model(self, data, n_steps):
         points, targets = data
         return self.gradient_step(points, targets, n_steps)
+
+
+class ANIL(MAML):
+    def __init__(self, T_train, net, lr, n_adaptation_steps=1) -> None:
+        super().__init__(T_train, net, lr, n_adaptation_steps)

@@ -27,14 +27,13 @@ class TaskLinearModel(nn.Module):
 
 class TaskLinearMetaModel(MetaModel):
 
-    def __init__(self, meta_dataset, r, V, c=None, W=None) -> None:
-        super().__init__(meta_dataset)
+    def __init__(self, T_train, r=None, V=None, c=None, W=None) -> None:
+        super().__init__(T_train)
         self.V = V
         self.V_hat = V
         self.c = c
         self.c_hat = self.c
         
-        self.T_train = len(meta_dataset)
         self.r = r
         W = W if W is not None else torch.randn(self.T_train, self.r)
         self.W = nn.Parameter(W)
@@ -51,7 +50,7 @@ class TaskLinearMetaModel(MetaModel):
         #     self.task_models.append(model)
         # return self.task_models
 
-    def training_parametrizer(self, task_index):
+    def parametrizer(self, task_index, dataset):
         w = self.W[task_index]
         model = TaskLinearModel(w, self.V_hat, self.c_hat)
         return model
@@ -88,7 +87,8 @@ class TaskLinearMetaModel(MetaModel):
     #     w = torch.tensor(w_hat, dtype=torch.float)
     #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
     #     return model
-    def adapt_task_model(self, points, targets, **kwargs):
+    def adapt_task_model(self, data, **kwargs):
+        points, targets = data
         v_values = self.V_hat(points)
         c_values = self.c_hat(points).detach() if self.c is not None else torch.zeros_like(targets)
         
@@ -123,5 +123,6 @@ class TaskLinearMetaModel(MetaModel):
     #     return model
 
 
+        
 
 

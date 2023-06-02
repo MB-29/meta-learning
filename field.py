@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from tqdm import tqdm 
+from hypnettorch.mnets import MLP
 
 from models import TaskLinearMetaModel, TaskLinearModel, MAML, CoDA
 from systems.dipole import Dipole
-from hypnettorch.mnets import MLP
 
 np.random.seed(5)
 torch.manual_seed(5)
@@ -20,11 +20,11 @@ V_target = system.generate_V_data()
 
 
 training_data = system.generate_training_data()
-meta_dataset = T_train * [training_data]
+meta_dataset = [(system.grid, torch.tensor(training_data[t]).float()) for t in range(T_train)]
 test_data = system.generate_test_data()
 
 
-shots = 3
+shots = 5
 adaptation_indices = np.random.randint(400, size=shots)
 adaptation_points = system.grid[adaptation_indices]
 
@@ -50,7 +50,7 @@ V_net = torch.nn.Sequential(
 # c_net = nn.Linear(2, 2)
 # W_values = torch.abs(torch.randn(T_train, r))
 # torch.randn(T, 2, requires_grad=True)
-tldr = TaskLinearMetaModel(meta_dataset, r, V_net, c=None)
+tldr = TaskLinearMetaModel(T_train, r, V_net, c=None)
 # training_task_models = tldr.define_task_models(W_values)
 
 net = torch.nn.Sequential(
@@ -64,19 +64,19 @@ net = torch.nn.Sequential(
 )
 
 # T_train = 1
-maml = MAML(meta_dataset, net, lr=0.01, first_order=False)
+maml = MAML(T_train, net, lr=0.01)
 mnet = MLP(n_in=2, n_out=1, hidden_layers=[16, 2], activation_fn=nn.Tanh())
-coda = CoDA(meta_dataset, 2, mnet)
+coda = CoDA(T_train, 2, mnet)
 
 metamodel_choice = {
-    'tldr': tldr,
     'coda': coda,
     'maml': maml,
+    'tldr': tldr,
 }
 
 metamodel_name = 'tldr'
-# metamodel_name = 'coda'
-# metamodel_name = 'maml'
+metamodel_name = 'coda'
+metamodel_name = 'maml'
 metamodel = metamodel_choice[metamodel_name]
 
 
@@ -99,7 +99,7 @@ for step in tqdm(range(n_gradient)):
     for task_index in range(T_train):
         task_points = system.grid
         task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
-        task_model = metamodel.training_parametrizer(task_index)
+        task_model = metamodel.parametrizer(task_index, meta_dataset)
         task_predictions = system.predict(task_model).squeeze()
         # task_predictions = metamodel.task_models[0](system.grid).squeeze()
         # print(f'prediction {task_predictions[:10]}')
@@ -123,9 +123,10 @@ for step in tqdm(range(n_gradient)):
     for test_task_index in range(T_test):
         task_targets =  torch.tensor(test_data[test_task_index], dtype=torch.float)
         adaptation_targets = task_targets[adaptation_indices]
+        adaptation_dataset = (system.grid, task_targets)
         # print(f'test task {test_task_index}')
         # print(f'task {test_task_index},  model {metamodel.learner.module[0].weight}')
-        adapted_model = metamodel.adapt_task_model(adaptation_points, adaptation_targets, n_steps=50)
+        adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=50)
         # print(f'predict')
         # print(f'task {test_task_index}, adapted model {adapted_model.module[0].weight}')
         # print(f'task {test_task_index}, net {net[0].weight}')
@@ -149,9 +150,8 @@ for step in tqdm(range(n_gradient)):
     # V_error = loss_function(V_predictions, V_target)
     # V_test_values.append(V_error.data)
 
-# path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.dat'
-# with open(path, 'wb') as file:
-#     torch.save(metamodel, file)
+path = f'output/models/dipole/{metamodel_name}_ngrad-{n_gradient}.ckpt'
+torch.save(metamodel.state_dict(), path)
 
 
 plt.subplot(2, 1, 1)
@@ -186,7 +186,8 @@ for index in range(T_test):
     task_targets =  torch.tensor(test_data[index], dtype=torch.float)
     adaptation_points = system.grid[adaptation_indices]
     adaptation_targets = task_targets[adaptation_indices]
-    adapted_model = metamodel.adapt_task_model(adaptation_points, adaptation_targets, n_steps=10)
+    adaptation_dataset = (system.grid, task_targets)
+    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=100)
     # print(f'w {w}')
     # print(f'adapted w {adapted_model.w}')
     # print(f'adapted model {adapted_model.module[0].weight}')
