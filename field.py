@@ -5,7 +5,7 @@ import torch.nn as nn
 from tqdm import tqdm 
 from hypnettorch.mnets import MLP
 
-from models import TaskLinearMetaModel, TaskLinearModel, MAML, CoDA
+from models import TaskLinearMetaModel, TaskLinearModel, MAML, CoDA, ANIL
 from systems.dipole import Dipole
 
 np.random.seed(5)
@@ -24,7 +24,7 @@ meta_dataset = [(system.grid, torch.tensor(training_data[t]).float()) for t in r
 test_data = system.generate_test_data()
 
 
-shots = 5
+shots = 2
 adaptation_indices = np.random.randint(400, size=shots)
 adaptation_points = system.grid[adaptation_indices]
 
@@ -63,24 +63,30 @@ net = torch.nn.Sequential(
     nn.Linear(2, 1)
 )
 
+head = torch.nn.Linear(r, 1)
+
 # T_train = 1
 maml = MAML(T_train, net, lr=0.01)
+anil = ANIL(T_train, V_net, head, lr=0.1)
 mnet = MLP(n_in=2, n_out=1, hidden_layers=[16, 2], activation_fn=nn.Tanh())
 coda = CoDA(T_train, 2, mnet)
+
 
 metamodel_choice = {
     'coda': coda,
     'maml': maml,
+    'anil': anil,
     'tldr': tldr,
 }
 
 metamodel_name = 'tldr'
 metamodel_name = 'coda'
 metamodel_name = 'maml'
+metamodel_name = 'anil'
 metamodel = metamodel_choice[metamodel_name]
 
 
-n_gradient = 5000
+n_gradient = 10000
 test_interval = max(n_gradient // 100, 1)
 W_test_values, V_test_values = [], []
 adaptation_error_values = []
@@ -96,11 +102,14 @@ for step in tqdm(range(n_gradient)):
     # print(f'training net {net[-1].weight}')
     # print(f'training W {metamodel.W[:10]}')
 
+    # print(f'body {metamodel.body[0].weight}')
     for task_index in range(T_train):
+        # print(f'task {task_index}')
         task_points = system.grid
         task_targets = torch.tensor(training_data[task_index], dtype=torch.float)
         task_model = metamodel.parametrizer(task_index, meta_dataset)
         task_predictions = system.predict(task_model).squeeze()
+        # print(f'head {metamodel.learner.weight}')
         # task_predictions = metamodel.task_models[0](system.grid).squeeze()
         # print(f'prediction {task_predictions[:10]}')
         # task_predictions = model(system.grid)
@@ -122,11 +131,10 @@ for step in tqdm(range(n_gradient)):
     adaptation_error = np.zeros(T_test)
     for test_task_index in range(T_test):
         task_targets =  torch.tensor(test_data[test_task_index], dtype=torch.float)
-        adaptation_targets = task_targets[adaptation_indices]
-        adaptation_dataset = (system.grid, task_targets)
+        adaptation_dataset = (system.grid[adaptation_indices], task_targets[adaptation_indices])
         # print(f'test task {test_task_index}')
         # print(f'task {test_task_index},  model {metamodel.learner.module[0].weight}')
-        adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=50)
+        adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=10)
         # print(f'predict')
         # print(f'task {test_task_index}, adapted model {adapted_model.module[0].weight}')
         # print(f'task {test_task_index}, net {net[0].weight}')
@@ -186,8 +194,15 @@ for index in range(T_test):
     task_targets =  torch.tensor(test_data[index], dtype=torch.float)
     adaptation_points = system.grid[adaptation_indices]
     adaptation_targets = task_targets[adaptation_indices]
-    adaptation_dataset = (system.grid, task_targets)
-    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=100)
+    adaptation_dataset = (adaptation_points, adaptation_targets)
+    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=5, plot=False)
+    # adapted_model.head.module.weight.data = torch.randn_like(adapted_model.head.weight)
+    # adapted_model.head.bias = 0
+    print(adapted_model.head.module.weight)
+    # print(adapted_model.head.bias)
+    predictions = adapted_model(system.grid)
+    # print(predictions[:10])
+    # print(adapted_model.body[-1].weight)
     # print(f'w {w}')
     # print(f'adapted w {adapted_model.w}')
     # print(f'adapted model {adapted_model.module[0].weight}')
