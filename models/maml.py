@@ -25,7 +25,7 @@ class MAML(MetaModel):
         learner = self.gradient_steps(points, targets, self.n_inner)
         return learner
     
-    def gradient_steps(self, points, targets, n_inner, plot=False):
+    def gradient_steps(self, points, targets, n_inner):
         inner_learner = self.inner_learner.clone()
         # print(f'adapt {n_steps} steps')
         # print(f'targets {targets[:10]}')
@@ -36,9 +36,9 @@ class MAML(MetaModel):
             inner_learner.adapt(train_error)
             train_error_values.append(train_error.item())
         # plt.plot
-        if plot:
-            plt.plot(train_error_values)
-            plt.show()
+        # if plot:
+        #     plt.plot(train_error_values)
+        #     plt.show()
         return inner_learner
     
     def adapt_task_model(self, data, n_steps):
@@ -60,6 +60,7 @@ class ANIL(MAML):
     def __init__(self, T_train, body, head, lr, **kwargs) -> None:
         super().__init__(T_train, head, lr, **kwargs)
         self.body = body
+        self.r = self.body[-1].weight.shape[0]
 
     def parametrizer(self, task_index, dataset):
         # print(f'body {self.body[0].weight}')
@@ -71,8 +72,19 @@ class ANIL(MAML):
         # print(f'adapted head {head.module.weight}')
         return BodyHead(self.body, head)
 
-    def adapt_task_model(self, data, n_steps, plot=False):
+    def adapt_task_model(self, data, n_steps):
         points, targets = data
         features = self.body(points)
-        head = self.gradient_steps(features, targets, n_steps, plot)
+        head = self.gradient_steps(features, targets, n_steps)
         return BodyHead(self.body, head)
+    
+    def adapt_heads(self, dataset):
+        T = len(dataset)
+        W = torch.zeros(T, self.r)
+        for task_index in range(T):
+            data = dataset[task_index]
+            task_model = self.adapt_task_model(data, n_steps=10)
+            W[task_index] = task_model.head.module.weight
+        self.W = W
+
+
