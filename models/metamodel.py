@@ -16,6 +16,9 @@ class MetaModel(nn.Module):
     def parametrizer(self, task_index, dataset):
         raise NotImplementedError
     
+    def regularization(self):
+        return 0
+    
     # def training_parametrizer(self, task_index):
     #     task_dataset = self.meta_dataset[task_index]
     #     return self.parametrizer(task_dataset)

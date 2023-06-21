@@ -4,11 +4,11 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from systems.system import System
+from systems.system import StaticSystem, ActuatedSystem
 
 
 
-class Cartpole(System):
+class StaticCartpole(StaticSystem):
 
     d, m, r = 5, 1, 2
 
@@ -59,22 +59,13 @@ class Cartpole(System):
         
     
     def V_star(self, x):
-        dd_x, cphi, sphi, d_phi, dd_phi  = torch.unbind(x, dim=1)
-        v = torch.stack((dd_x, dd_phi*cphi - d_phi**2*sphi), dim=1)
+        dd_y, cphi, sphi, d_phi, dd_phi  = torch.unbind(x, dim=1)
+        v = torch.stack((dd_y, dd_phi*cphi - d_phi**2*sphi), dim=1)
         return v
 
     def c_star(self, x):
         return 0
         
-    def generate_data(self, W, n_samples):
-        T, r = W.shape
-        data = np.zeros((T, self.grid.shape[0]))
-        for task_index in range(T):
-            w = W[task_index]
-            environment = self.define_environment(w)
-            task_values = environment(self.grid)
-            data[task_index] = task_values
-        return data
     
     def generate_V_data(self):
         return self.V_star(self.grid)
@@ -82,3 +73,7 @@ class Cartpole(System):
     def predict(self, model):
         return model(self.grid)
     
+class ActuatedCartpole(ActuatedSystem):
+
+    def __init__(self, W_train, d) -> None:
+        super().__init__(W_train, d)

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from systems.system import System
+from systems.system import StaticSystem
 
 def derive_field(potential_map):
 
@@ -19,7 +19,7 @@ def derive_field(potential_map):
     return field_map
 
 
-class Dipole(System):
+class Dipole(StaticSystem):
 
     d, m, r = 2, 1, 2
 
@@ -63,15 +63,15 @@ class Dipole(System):
     def c_star(self, x):
         return 0
         
-    def generate_data(self, W, n_samples):
-        T, r = W.shape
-        data = np.zeros((T, self.n_points**2))
-        for task_index in range(T):
-            w = W[task_index]
-            environment = self.define_environment(w)
-            potential_values = environment(self.grid)
-            data[task_index] = potential_values
-        return data
+    # def generate_data(self, W, n_samples):
+    #     T, r = W.shape
+    #     data = np.zeros((T, self.n_points**2))
+    #     for task_index in range(T):
+    #         w = W[task_index]
+    #         environment = self.define_environment(w)
+    #         potential_values = environment(self.grid)
+    #         data[task_index] = potential_values
+    #     return data
     
     def generate_V_data(self):
         return self.V_star(self.grid)
@@ -119,7 +119,7 @@ class Dipole(System):
             vector_x.T,
             vector_y.T,
             # color='black',
-            linewidth=linewidth*3,
+            linewidth=linewidth*5,
             arrowsize=.8,
             density=.5,
             **kwargs)

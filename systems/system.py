@@ -1,4 +1,4 @@
-
+import torch
 import torch.nn as nn
 
 class System(nn.Module):
@@ -15,10 +15,6 @@ class System(nn.Module):
     def c_star(self, x):
         raise NotImplementedError
     
-    def define_environment(self, w):
-        def environment(x):
-            return self.V_star(x)@w + self.c_star(x)
-        return environment
 
     def generate_data(self, W, n_samples):
         raise NotImplementedError
@@ -38,6 +34,34 @@ class System(nn.Module):
     def loss(self, meta_model, data):
         raise NotImplementedError
 
+    def generate_data(self, W, n_samples):
+        T, r = W.shape
+        dataset = []
+        for task_index in range(T):
+            w = W[task_index]
+            environment = self.define_environment(w)
+            task_dataset = self.generate_task_dataset(environment)
+            dataset.append(task_dataset)
+        return dataset
+    
     def plot_system(self, w):
         raise NotImplementedError
 
+class StaticSystem(System):
+
+    def define_environment(self, w):
+        def environment(x):
+            return self.V_star(x)@w + self.c_star(x)
+        return environment
+
+    def generate_task_dataset(self, environment):
+        task_targets = environment(self.grid).float()
+        task_dataset = (self.grid, task_targets)
+        return task_dataset
+    
+class ActuatedSystem(System):
+    
+    def generate_task_dataset(self, environment):
+        task_targets = environment(self.grid).float()
+        task_dataset = (self.grid, task_targets)
+        return task_dataset

@@ -1,3 +1,3 @@
 from models.maml import MAML, ANIL
-from models.task_linear import TaskLinearModel, TaskLinearMetaModel
+from models.tldr import TaskLinearModel, TLDR
 from models.coda import CoDA

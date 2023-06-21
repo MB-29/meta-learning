@@ -2,13 +2,13 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from systems.system import System
+from systems.system import StaticSystem
 
 
 
-class Arm(System):
+class Arm(StaticSystem):
 
-    d, m, r = 6, 1, 3
+    d, m, r = 8, 1, 3
 
     I2_values_train = np.array([1., 2.0])
     mll_values_train = np.array([1.5, 2.5])
@@ -66,15 +66,15 @@ class Arm(System):
     def c_star(self, x):
         return 0
         
-    def generate_data(self, W, n_samples):
-        T, r = W.shape
-        data = np.zeros((T, self.grid.shape[0]))
-        for task_index in range(T):
-            w = W[task_index]
-            environment = self.define_environment(w)
-            task_values = environment(self.grid)
-            data[task_index] = task_values
-        return data
+    # def generate_data(self, W, n_samples):
+    #     T, r = W.shape
+    #     data = np.zeros((T, self.grid.shape[0]))
+    #     for task_index in range(T):
+    #         w = W[task_index]
+    #         environment = self.define_environment(w)
+    #         task_values = environment(self.grid)
+    #         data[task_index] = task_values
+    #     return data
     
     def generate_V_data(self):
         return self.V_star(self.grid)

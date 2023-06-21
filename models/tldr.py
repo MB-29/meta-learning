@@ -4,15 +4,17 @@ import torch.nn as nn
 
 from models.metamodel import MetaModel
 
-loss_function = nn.MSELoss()
 
 class TaskLinearModel(nn.Module):
 
-    def __init__(self, w, v, c=None):
+    def __init__(self, w, v, c=None, **kwargs):
         super().__init__()
         self.w = w
         self.V = v
         self.c = c 
+
+        if kwargs.get('dynamics') is not None:
+            self.predict = self.predict_dynamics
 
     def forward(self, x):
         assert x.ndim > 1
@@ -21,13 +23,16 @@ class TaskLinearModel(nn.Module):
         y = y if self.c is None else y+self.c(x)
         return y
     
+    def predict(self, x):
+        return self.forward(x)
+    
     def d_flow(self, t, x):
         return self.forward(x)
 
 
-class TaskLinearMetaModel(MetaModel):
+class TLDR(MetaModel):
 
-    def __init__(self, T_train, r, V, c=None, W=None) -> None:
+    def __init__(self, T_train, r, V, c=None, W=None, **kwargs) -> None:
         super().__init__(T_train)
         self.V = V
         self.V_hat = None
@@ -38,6 +43,8 @@ class TaskLinearMetaModel(MetaModel):
         W = W if W is not None else torch.abs(torch.randn(self.T_train, self.r))
         self.W = nn.Parameter(W)
 
+
+        self.kwargs = kwargs
         # self.define_task_models(W)
 
     # def define_task_models(self, W):
@@ -52,7 +59,7 @@ class TaskLinearMetaModel(MetaModel):
 
     def parametrizer(self, task_index, dataset):
         w = self.W[task_index]
-        model = TaskLinearModel(w, self.V, self.c)
+        model = TaskLinearModel(w, self.V, self.c, **self.kwargs)
         return model
         # W = W if W is not None else 
 

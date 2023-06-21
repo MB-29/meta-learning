@@ -25,7 +25,7 @@ class MAML(MetaModel):
         learner = self.gradient_steps(points, targets, self.n_inner)
         return learner
     
-    def gradient_steps(self, points, targets, n_inner):
+    def gradient_steps(self, points, targets, n_inner, plot=False):
         inner_learner = self.inner_learner.clone()
         # print(f'adapt {n_steps} steps')
         # print(f'targets {targets[:10]}')
@@ -36,15 +36,25 @@ class MAML(MetaModel):
             inner_learner.adapt(train_error)
             train_error_values.append(train_error.item())
         # plt.plot
-        # if plot:
-        #     plt.plot(train_error_values)
-        #     plt.show()
+        if plot:
+            plt.plot(train_error_values)
+            plt.show()
         return inner_learner
     
     def adapt_task_model(self, data, n_steps):
         points, targets = data
         learner = self.gradient_steps(points, targets, n_steps)
         return learner
+
+    def adapt_heads(self, dataset, n_steps):
+        T = len(dataset)
+        W = torch.zeros(T, self.r)
+        for task_index in range(T):
+            data = dataset[task_index]
+            task_model = self.adapt_task_model(data, n_steps, plot=False)
+            W[task_index] = task_model.inner_learber.module[-1].weight
+        self.W = W
+        return W
 
 class BodyHead(nn.Module):
     def __init__(self, body, head, **kwargs) -> None:
@@ -72,19 +82,20 @@ class ANIL(MAML):
         # print(f'adapted head {head.module.weight}')
         return BodyHead(self.body, head)
 
-    def adapt_task_model(self, data, n_steps):
+    def adapt_task_model(self, data, n_steps, plot=False):
         points, targets = data
         features = self.body(points)
-        head = self.gradient_steps(features, targets, n_steps)
+        head = self.gradient_steps(features, targets, n_steps, plot=plot)
         return BodyHead(self.body, head)
     
-    def adapt_heads(self, dataset):
+    def adapt_heads(self, dataset, n_steps):
         T = len(dataset)
         W = torch.zeros(T, self.r)
         for task_index in range(T):
             data = dataset[task_index]
-            task_model = self.adapt_task_model(data, n_steps=10)
+            task_model = self.adapt_task_model(data, n_steps, plot=False)
             W[task_index] = task_model.head.module.weight
         self.W = W
+        return W
 
 
