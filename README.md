@@ -23,10 +23,11 @@ for step in tqdm(range(n_gradient)):
     optimizer.zero_grad()
     loss = 0
     for task_index in range(T_train):
+        task_points, task_targets = meta_dataset[task_index]
         task_model = metamodel.parametrizer(task_index, meta_dataset)
-        task_predictions = system.predict(task_model).squeeze()
+        task_predictions = task_model(task_points).squeeze()
         task_loss = loss_function(task_predictions, task_targets)
-        loss += task_loss
+        loss += task_loss 
     loss.backward()
     optimizer.step()
 ```

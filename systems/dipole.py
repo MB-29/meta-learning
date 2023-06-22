@@ -32,8 +32,8 @@ class Dipole(StaticSystem):
 
     U_values_adaptation = np.array([1.5, 4.])
     p_values_adaptation = np.array([0.25, 0.7])
-    parameter_grid_adaptation = np.meshgrid(U_values_adaptation, p_values_adaptation)
-    W_test = np.dstack(parameter_grid_adaptation).reshape(-1, 2)
+    parameter_grid_test = np.meshgrid(U_values_adaptation, p_values_adaptation)
+    W_test = np.dstack(parameter_grid_test).reshape(-1, 2)
 
     test_task_n_samples = 1
 
@@ -72,9 +72,6 @@ class Dipole(StaticSystem):
     #         potential_values = environment(self.grid)
     #         data[task_index] = potential_values
     #     return data
-    
-    def generate_V_data(self):
-        return self.V_star(self.grid)
     
     def predict(self, model):
         return model(self.grid)

@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from control import actuate
+
 class System(nn.Module):
 
     def __init__(self, W_train, d) -> None:
@@ -13,14 +15,14 @@ class System(nn.Module):
         raise NotImplementedError
 
     def c_star(self, x):
-        raise NotImplementedError
+        return 0
     
 
     def generate_data(self, W, n_samples):
         raise NotImplementedError
     
     def generate_V_data(self):
-        raise NotImplementedError
+        return self.V_star(self.grid)
     
     def generate_training_data(self):
         return self.generate_data(self.W_train, self.training_task_n_samples)
@@ -60,8 +62,15 @@ class StaticSystem(System):
         return task_dataset
     
 class ActuatedSystem(System):
+
+    def define_environment(self, w):
+        raise NotImplementedError
     
     def generate_task_dataset(self, environment):
-        task_targets = environment(self.grid).float()
-        task_dataset = (self.grid, task_targets)
+        state_values = actuate(environment, self.u_values)
+        task_targets = torch.tensor(self.u_values).float()
+        task_points = self.extract_points(state_values)
+        task_dataset = (task_points, task_targets) 
         return task_dataset
+    
+

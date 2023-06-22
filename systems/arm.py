@@ -76,8 +76,6 @@ class Arm(StaticSystem):
     #         data[task_index] = task_values
     #     return data
     
-    def generate_V_data(self):
-        return self.V_star(self.grid)
     
     def predict(self, model):
         return model(self.grid)
