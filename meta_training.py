@@ -18,7 +18,8 @@ def meta_train(metamodel, meta_dataset, lr, n_gradient, test=None):
         optimizer.zero_grad()
         
         loss = 0
-        for task_index in range(T_train):
+        random_indices = np.random.choice(T_train, T_train, replace=False)
+        for task_index in random_indices:
             task_points, task_targets = meta_dataset[task_index]
             task_model = metamodel.parametrizer(task_index, meta_dataset)
             task_predictions = task_model(task_points).squeeze()
