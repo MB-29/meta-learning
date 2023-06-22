@@ -23,7 +23,7 @@ def meta_train(metamodel, meta_dataset, lr, n_gradient, test=None):
             task_points, task_targets = meta_dataset[task_index]
             task_model = metamodel.parametrizer(task_index, meta_dataset)
             task_predictions = task_model(task_points).squeeze()
-            task_loss = loss_function(task_predictions, task_targets)
+            task_loss = loss_function(task_predictions.squeeze(), task_targets.squeeze())
             loss += task_loss 
         loss += metamodel.regularization()
         loss.backward()
@@ -47,7 +47,7 @@ def test_model(metamodel, test_dataset, adaptation_indices, n_steps):
         adaptation_dataset = (test_points[adaptation_indices], test_targets[adaptation_indices])
         adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=n_steps)
         predictions = adapted_model(test_points).squeeze()
-        task_adaptation_error = loss_function(predictions, test_targets)
+        task_adaptation_error = loss_function(predictions, test_targets.squeeze())
         adaptation_error[test_task_index] = task_adaptation_error
     return adaptation_error
 
