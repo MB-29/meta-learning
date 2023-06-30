@@ -27,7 +27,7 @@ class LotkaVolterra(System):
     # b, d = np.meshgrid(beta_values_train, delta_values_train)
     # W_train = np.concatenate((b.reshape((-1, 1)), d.reshape(-1, 1)), 1)
     W_train = torch.tensor(W_train, dtype=torch.float)
-    training_task_n_samples = 4
+    training_task_n_trajectories = 4
 
     beta_values_test = [0.625, 1.125]
     delta_values_test = [0.625, 1.125]
@@ -67,9 +67,9 @@ class LotkaVolterra(System):
     def simulate(self, dynamics, x0_values, diff):
         if diff:
             return integrate_trajectory(x0_values, dynamics, torch.tensor(self.time_values))
-        n_samples = x0_values.shape[0]
-        trajectories = np.zeros((self.Nt, n_samples, 2))
-        for sample_index in range(n_samples):
+        n_trajectories = x0_values.shape[0]
+        trajectories = np.zeros((self.Nt, n_trajectories, 2))
+        for sample_index in range(n_trajectories):
                 # beta, delta = W[t]
             x0 = x0_values[sample_index]
             sample_trajectory = integrate_trajectory(x0, dynamics, self.time_values)
@@ -79,20 +79,20 @@ class LotkaVolterra(System):
     # def simulate(self, V, c, w, x0_values, diff):
     #     if diff:
     #         return integrate_trajectory(x0_values, V, c, w, torch.tensor(self.time_values))
-    #     n_samples = x0_values.shape[0]
-    #     trajectories = np.zeros((self.Nt, n_samples, 2))
-    #     for sample_index in range(n_samples):
+    #     n_trajectories = x0_values.shape[0]
+    #     trajectories = np.zeros((self.Nt, n_trajectories, 2))
+    #     for sample_index in range(n_trajectories):
     #             # beta, delta = W[t]
     #         x0 = x0_values[sample_index]
     #         sample_trajectory = integrate_trajectory(x0, V, c, w, self.time_values)
     #         trajectories[:, sample_index, :] = sample_trajectory
     #     return trajectories
     
-    def generate_data(self, W, n_samples):
+    def generate_data(self, W, n_trajectories):
         T = W.shape[0]
-        x0_values = 2*np.random.rand(T, n_samples, 2) + 1
+        x0_values = 2*np.random.rand(T, n_trajectories, 2) + 1
         print(f'generate data from x0 {x0_values}')
-        task_data = np.zeros((T, self.Nt, n_samples, 2))
+        task_data = np.zeros((T, self.Nt, n_trajectories, 2))
         for t in range(T):
             w = W[t]
             environment = self.define_environment(w)
@@ -117,7 +117,7 @@ class LotkaVolterra(System):
 
 
     def trajectory_loss(self, W, V, c, data):
-        T, n_samples = data.shape[:2]
+        T, n_trajectories = data.shape[:2]
         assert W.shape[0] == T
         loss = 0
         for t in range(T):
@@ -138,7 +138,7 @@ class LotkaVolterra(System):
     #     V, c = meta_model.V, meta_model.c
     #     for t in range(self.T_test):
     #         w = self.W_test[t:t+1]
-    #         adaptation_trajectory = self.generate_data(w, n_samples=1)
+    #         adaptation_trajectory = self.generate_data(w, n_trajectories=1)
     #         adapted_model = meta_model.adapt(x, y)
     #         w_hat = adapted_model.w
     #     predictions = self.simulate(V, c, W_adapt)
