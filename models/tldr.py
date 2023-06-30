@@ -96,8 +96,10 @@ class TLDR(MetaModel):
     #     return model
     def adapt_task_model(self, data, **kwargs):
         points, targets = data
-        v_values = self.V(points)
-        c_values = self.c(points).detach() if self.c is not None else torch.zeros_like(targets)
+        V = self.V_hat if self.V_hat is not None else self.V
+        c = self.c_hat if self.c_hat is not None else self.c
+        v_values = V(points)
+        c_values = c(points).detach() if self.c is not None else torch.zeros_like(targets)
         
         X = v_values.view(-1, self.r).detach() 
         Y = (targets - c_values).view(-1)

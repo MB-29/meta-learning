@@ -16,7 +16,7 @@ class Arm(StaticSystem):
     parameter_grid_train = np.meshgrid(I2_values_train, mll_values_train, mgl_values_train)
     W_train = np.dstack(parameter_grid_train).reshape(-1, 3)
 
-    training_task_n_samples = 1
+    training_task_n_trajectories = 1
 
     I2_values_test = np.array([1.5, 2.5])
     mll_values_test = np.array([1.0, 2.0])
@@ -24,7 +24,7 @@ class Arm(StaticSystem):
     parameter_grid_test = np.meshgrid(I2_values_test, mll_values_test, mgl_values_test)
     W_test = np.dstack(parameter_grid_train).reshape(-1, 3)
 
-    test_task_n_samples = 1
+    test_task_n_trajectories = 1
 
     n_points = 5
     phi_values = torch.linspace(-np.pi/5, np.pi/5, n_points)
@@ -66,7 +66,7 @@ class Arm(StaticSystem):
     def c_star(self, x):
         return 0
         
-    # def generate_data(self, W, n_samples):
+    # def generate_data(self, W, n_trajectories):
     #     T, r = W.shape
     #     data = np.zeros((T, self.grid.shape[0]))
     #     for task_index in range(T):
@@ -76,8 +76,6 @@ class Arm(StaticSystem):
     #         data[task_index] = task_values
     #     return data
     
-    def generate_V_data(self):
-        return self.V_star(self.grid)
     
     def predict(self, model):
         return model(self.grid)

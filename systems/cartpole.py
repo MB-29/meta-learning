@@ -4,11 +4,11 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from systems.system import StaticSystem, ActuatedSystem
+from systems.system import ActuatedSystem
+from robotics.cartpole import Cartpole
 
-
-
-class StaticCartpole(StaticSystem):
+    
+class ActuatedCartpole(ActuatedSystem):
 
     d, m, r = 5, 1, 2
 
@@ -19,7 +19,7 @@ class StaticCartpole(StaticSystem):
     parameter_grid_train = np.meshgrid(M_values_train, ml_values_train)
     W_train = np.dstack(parameter_grid_train).reshape(-1, 2)
 
-    training_task_n_samples = 1
+    training_task_n_trajectories = 1
 
     M_values_test = np.array([1.5, 2.5])
     ml_values_test = np.array([.3, .6])
@@ -28,52 +28,72 @@ class StaticCartpole(StaticSystem):
     parameter_grid_test = np.meshgrid(M_values_test, ml_values_test
     
     )
-    W_test = np.dstack(parameter_grid_train).reshape(-1, 2)
+    W_test = np.dstack(parameter_grid_test).reshape(-1, 2)
 
-    test_task_n_samples = 1
+    test_task_n_trajectories = 1
 
-    n_points = 5
-    dd_z_values = torch.linspace(-1, 1, n_points)
-    phi_values = torch.linspace(-np.pi, np.pi, n_points)
-    d_phi_values = torch.linspace(0, 1., n_points)
-    dd_phi_values = torch.linspace(0, 1, n_points)
-    grid_dd_z, grid_phi, grid_d_phi, grid_dd_phi, = torch.meshgrid(
-            dd_z_values,
-            phi_values,
-            d_phi_values,
-            dd_phi_values,
-        )
-    grid = torch.cat([
-        grid_dd_z.reshape(-1, 1),
-        torch.cos(grid_phi).reshape(-1, 1),
-        torch.sin(grid_phi).reshape(-1, 1),
-        grid_d_phi.reshape(-1, 1),
-        grid_dd_phi.reshape(-1, 1),
-    ], 1)
-
-
-    def __init__(self) -> None:
-        super().__init__(self.W_train, self.d)
-
-        self.test_data = None
-        
+    dt = 0.02
+    Nt = 200
+    t_values = dt*np.arange(Nt)
+    gamma = 5
+    n_trajectories = 8
+    U_values = np.zeros((n_trajectories, Nt, 1))
+    for traj_index in range(n_trajectories):
+        period = 100*(traj_index//2+1)*dt
+        phase = traj_index//4 * np.pi/2 - np.pi
+        U_values[traj_index] = gamma*(np.sin(2*np.pi*t_values/period + phase)).reshape(-1, 1)
+        # U_values[2*traj_index+1] = -gamma*(np.sin(2*np.pi*t_values/(100(traj_index+1)*dt))).reshape(-1, 1)
+    # U_values[1] = -gamma*(np.sin(2*np.pi*t_values/(75*dt))).reshape(-1, 1)
+    # U_values[2] = gamma*(np.cos(2*np.pi*t_values/(50*dt))).reshape(-1, 1)
+    # U_values[3] = -gamma*(np.cos(2*np.pi*t_values/(10*dt))).reshape(-1, 1)
     
+    x0_values = np.zeros((n_trajectories, 4))
+    x0_values[::2, 2] = np.pi
+    # U_values[200:] = gamma*(np.sin(2*np.pi*t_values[200:]/(Nt/2*dt))).reshape(-1, 1)
+
+
+    def __init__(self, beta=0) -> None:
+        super().__init__(self.W_train, self.d)
+        self.beta = beta
+        self.test_data = None
+
     def V_star(self, x):
         dd_y, cphi, sphi, d_phi, dd_phi  = torch.unbind(x, dim=1)
         v = torch.stack((dd_y, dd_phi*cphi - d_phi**2*sphi), dim=1)
         return v
 
-    def c_star(self, x):
-        return 0
-        
-    
-    def generate_V_data(self):
-        return self.V_star(self.grid)
-    
-    def predict(self, model):
-        return model(self.grid)
-    
-class ActuatedCartpole(ActuatedSystem):
 
-    def __init__(self, W_train, d) -> None:
-        super().__init__(W_train, d)
+    def define_environment(self, w):
+        M, ml = w
+        cartpole = Cartpole(ml, M-ml, 1., beta=self.beta, alpha = 0., dt=self.dt)
+        return cartpole
+
+    
+    def extract_points(self, state_values):
+    
+        velocity_values = (1/self.dt)*np.diff(state_values, axis=0)
+        y, d_y, phi, d_phi = state_values[:-1].T
+        d_y, dd_y, d_phi, dd_phi = velocity_values.T
+        cphi, sphi = np.cos(phi), np.sin(phi)
+        x_values = np.stack((dd_y, cphi, sphi, d_phi, dd_phi), axis=1)
+        points = torch.tensor(x_values).float()
+        return points
+    
+
+class DampedActuatedCartpole(ActuatedCartpole):
+
+    d, m, r = 6, 1, 3
+
+    def __init__(self) -> None:
+        super().__init__(beta=0.1)
+
+    def extract_points(self, state_values):
+    
+        velocity_values = (1/self.dt)*np.diff(state_values, axis=0)
+        y, d_y, phi, d_phi = state_values[:-1].T
+        d_y, dd_y, d_phi, dd_phi = velocity_values.T
+        cphi, sphi = np.cos(phi), np.sin(phi)
+        x_values = np.stack((d_y, dd_y, cphi, sphi, d_phi, dd_phi), axis=1)
+        points = torch.tensor(x_values).float()
+        return points
+    

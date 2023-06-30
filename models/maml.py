@@ -48,11 +48,11 @@ class MAML(MetaModel):
 
     def adapt_heads(self, dataset, n_steps):
         T = len(dataset)
-        W = torch.zeros(T, self.r)
+        W = torch.zeros(T, 2)
         for task_index in range(T):
             data = dataset[task_index]
-            task_model = self.adapt_task_model(data, n_steps, plot=False)
-            W[task_index] = task_model.inner_learber.module[-1].weight
+            task_model = self.adapt_task_model(data, n_steps)
+            W[task_index] = task_model.module[-1].weight
         self.W = W
         return W
 

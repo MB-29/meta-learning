@@ -1,3 +1,3 @@
 from systems.dipole import Dipole
 from systems.arm import Arm
-from systems.cartpole import StaticCartpole
+from systems.cartpole import ActuatedCartpole, DampedActuatedCartpole
