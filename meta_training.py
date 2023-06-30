@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 loss_function = nn.MSELoss()
 
-def meta_train(metamodel, meta_dataset, lr, n_gradient, test=None):
+def meta_train(metamodel, meta_dataset, lr, n_gradient, test=None, batch_size=None):
     T_train = len(meta_dataset)
     loss_values = np.zeros(n_gradient)
     optimizer = torch.optim.Adam(metamodel.parameters(), lr=lr)
@@ -19,11 +19,20 @@ def meta_train(metamodel, meta_dataset, lr, n_gradient, test=None):
         
         loss = 0
         random_indices = np.random.choice(T_train, T_train, replace=False)
+        sample_size = meta_dataset[0][0].shape[0]
+        batch_size = sample_size if batch_size is None else batch_size
+        # print(f'batch size {batch_size}, sample_size = {sample_size}')
+        batch_indices = np.random.choice(sample_size, size=batch_size, replace=False)
+        # batch_indices = np.arange(sample_size) if batch_size is None else batch_indices
         for task_index in random_indices:
             task_points, task_targets = meta_dataset[task_index]
+            
+            # batch_indices = np.random.choice(task_points.shap`e[0], size=50, replace=False)
             task_model = metamodel.parametrizer(task_index, meta_dataset)
-            task_predictions = task_model(task_points).squeeze()
-            task_loss = loss_function(task_predictions.squeeze(), task_targets.squeeze())
+            task_predictions = task_model(task_points[batch_indices]).squeeze()
+            batch_targets = task_targets[batch_indices]
+            task_loss = loss_function(task_predictions.squeeze(), batch_targets.squeeze())
+            # task_loss = loss_function(task_predictions.squeeze()[batch_indices], task_targets.squeeze()[batch_indices])
             loss += task_loss 
         loss += metamodel.regularization()
         loss.backward()
