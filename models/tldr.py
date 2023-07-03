@@ -67,18 +67,25 @@ class TLDR(MetaModel):
         calibration_size, _ = W_star.shape
         W_regression = self.W[:calibration_size].detach().numpy()
         estimator, residuals, rank, s = np.linalg.lstsq(
-        W_regression, W_star, rcond=None)
+        W_regression, W_star, rcond=None) 
+        # print(f'rank {rank}')
+        # print(f's {s}')
         return estimator
 
     def calibrate(self, W_star):
     
         self.estimator = self.estimate_transform(W_star)
         self.W_hat = self.W.detach() @ torch.tensor(self.estimator, dtype=torch.float)
+        r_star = W_star.shape[1]
 
-        transform = np.linalg.inv(self.estimator + 1e-7*np.eye(self.r))
+        # transform = np.linalg.pinv(self.estimator + 1e-7*np.eye(self.r, r_star))
+        calibration_size, _ = W_star.shape
+        transform = np.linalg.pinv(W_star)@self.W[:calibration_size].detach().numpy()
+        # print(f'pinverse has shape {transform.shape}')
         tensor = torch.tensor(transform, dtype=torch.float, requires_grad=False)
-        layer = nn.Linear(self.r, self.r, bias=False)
+        layer = nn.Linear(r_star, self.r, bias=False)
         layer.weight.data = tensor
+        self.r_hat = r_star
         self.V_hat = nn.Sequential(self.V, layer)
         self.c_hat = nn.Sequential(self.c, layer) if self.c is not None else None
         return self.V_hat, self.W_hat
@@ -101,8 +108,10 @@ class TLDR(MetaModel):
         v_values = V(points)
         c_values = c(points).detach() if self.c is not None else torch.zeros_like(targets)
         
-        X = v_values.view(-1, self.r).detach() 
+        X = v_values.detach() 
         Y = (targets - c_values).view(-1)
+        # print(X.shape)
+        # print(Y.shape)
         
         w_hat, _, _, _ = np.linalg.lstsq(X, Y, rcond=None)
         w = torch.tensor(w_hat, dtype=torch.float)
