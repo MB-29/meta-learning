@@ -43,12 +43,14 @@ class Robot:
         dx = x_dot * self.dt
         # noise =  self.sigma * np.random.randn(self.d)
         # dx += noise
+        print(dx)
         self.x += dx
         self.x = np.clip(self.x, self.x_min, self.x_max)
         return dx
 
-    def reset(self):
-        self.x = self.x0.copy()
+    def reset(self, x0=None):
+        x0 = self.x0 if x0 is None else x0
+        self.x = x0.copy()
 
     
     def d_dynamics(self, x, u):
@@ -58,9 +60,9 @@ class Robot:
         raise NotImplementedError
 
     def actuate(self, u_values, x0=None):
+        print(x0)
         T = u_values.shape[0]
-        self.reset()
-        self.x0 = x0 if x0 is not None else self.x0
+        self.reset(x0)
         x_values = np.zeros((T+1, self.d))
         for t in range(T):
             x = self.x.copy()
@@ -69,9 +71,9 @@ class Robot:
             u = u_values[t]
             self.step(u)
 
-            # self.plot_system(x, u, t)
-            # plt.pause(0.1)
-            # plt.close()
+            self.plot_system(x, u, t)
+            plt.pause(0.1)
+            plt.close()
         x_values[T] = self.x.copy()
         # z_values = np.concatenate((x_values, u_values), axis=1)
         return x_values

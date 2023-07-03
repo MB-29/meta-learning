@@ -14,8 +14,6 @@ class Cartpole(Robot):
     d, m = 4, 1
 
 
-    K = np.array([[1., .1, .2, .2, .1]])
-
 
     @staticmethod
     def observe(x):

@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from systems import Arm
 from meta_training import test_model
-from scripts.train.arm import metamodel_choice
+from scripts.train.static_arm import metamodel_choice
 
 rc('font', size=15)
 rc('text', usetex=True)
