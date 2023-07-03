@@ -128,4 +128,3 @@ class Cartpole(Robot):
         # plt.ylim((-2, 2))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.title(f't = {t}')
-

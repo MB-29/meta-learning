@@ -6,7 +6,7 @@ from tqdm import tqdm
 from matplotlib import rc
 
 from models import TaskLinearMetaModel, TaskLinearModel, MAML, CoDA
-from systems.arm import Arm
+from systems.static_arm import Arm
 
 rc('font', size=15)
 rc('text', usetex=True)
