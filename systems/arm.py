@@ -32,25 +32,26 @@ class ActuatedArm(ActuatedSystem):
     dt = 0.02
     Nt = 200
     t_values = dt*np.arange(Nt)
-    gamma = 0
+    gamma = 5
     n_trajectories = 8
     U_values = np.zeros((n_trajectories, Nt, 1))
+    x0_values = np.zeros((n_trajectories, 4))
     for traj_index in range(n_trajectories):
         period = 100*(traj_index//2+1)*dt
         phase = traj_index//4 * np.pi/2 - np.pi
         U_values[traj_index] = gamma*(np.sin(2*np.pi*t_values/period + phase)).reshape(-1, 1)
+        x0_values[traj_index, 0] = traj_index * np.pi/4
         # U_values[2*traj_index+1] = -gamma*(np.sin(2*np.pi*t_values/(100(traj_index+1)*dt))).reshape(-1, 1)
     # U_values[1] = -gamma*(np.sin(2*np.pi*t_values/(75*dt))).reshape(-1, 1)
     # U_values[2] = gamma*(np.cos(2*np.pi*t_values/(50*dt))).reshape(-1, 1)
     # U_values[3] = -gamma*(np.cos(2*np.pi*t_values/(10*dt))).reshape(-1, 1)
     
-    x0_values = 0.2*np.zeros((n_trajectories, 4))
     x0_values[:, 2] = 1
     # x0_values[::2, 2] = np.pi
     # U_values[200:] = gamma*(np.sin(2*np.pi*t_values[200:]/(Nt/2*dt))).reshape(-1, 1)
 
 
-    def __init__(self, alpha=0.) -> None:
+    def __init__(self, alpha=0.2) -> None:
         super().__init__(self.W_train, self.d)
         self.alpha = alpha
         self.test_data = None
@@ -62,7 +63,7 @@ class ActuatedArm(ActuatedSystem):
 
 
     def define_environment(self, w):
-        print(f'w = {w}')
+        # print(f'w = {w}')
         I2, mll, ml = w
         l2 = 3*I2/ml
         l1 = mll/ml

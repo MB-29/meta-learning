@@ -7,7 +7,7 @@ import torch
 
 from systems import DampedActuatedCartpole
 from scripts.train.damped_cartpole import metamodel_choice
-from plots.layout import color_choice
+from scripts.plot.layout import color_choice
 
 np.random.seed(5)
 torch.manual_seed(5)

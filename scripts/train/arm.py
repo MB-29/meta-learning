@@ -50,10 +50,10 @@ metamodel_choice = {
     'tldr': tldr,
 }
 
-metamodel_name = 'tldr'
 metamodel_name = 'coda'
 metamodel_name = 'maml'
 metamodel_name = 'anil'
+metamodel_name = 'tldr'
 metamodel = metamodel_choice[metamodel_name]
 
 if __name__ == '__main__':
