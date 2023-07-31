@@ -76,7 +76,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil']):
     # model = robot.inverse_dynamics
 # for model_name, model in models.items():
 
-    x_values, u_values = robot.control_loop(x_target_values, u_ff_values, plot)
+    x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
 
     color = color_choice[metamodel_name]
 
@@ -97,7 +97,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil']):
 
 dynamics_model = robot.inverse_dynamics
 u_ff_values = robot.plan_inverse_dynamics(dynamics_model, x_target_values)
-x_values, u_values = robot.control_loop(x_target_values, u_ff_values, plot)
+x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
 plt.subplot(2, 1, 1)
 plt.plot(u_ff_values.squeeze(), ls='--', color='black')
 plt.ylabel(r'input')

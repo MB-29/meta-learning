@@ -44,7 +44,7 @@ u_target_values = law(t_values).reshape(-1, 1)
 x_target_values = robot.actuate(u_target_values)
 points = system.extract_points(x_target_values)
 
-plot = {'u_target_values': u_target_values}
+plot = {'u_target_values': u_target_values, 'x_target_values': x_target_values}
 plot = None
 
 
@@ -56,7 +56,7 @@ fig.set_tight_layout(True)
 
 # for model_index, metamodel_name in enumerate(['tldr']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil', 'maml']):
-for model_index, metamodel_name in enumerate(['tldr', 'maml']):
+for model_index, metamodel_name in enumerate(['tldr', 'maml', 'coda']):
 
     metamodel = metamodel_choice[metamodel_name]
     path = f'output/models/damped_cartpole/{metamodel_name}_{n_gradient}.ckpt'
@@ -67,7 +67,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml']):
     test_points, test_targets = test_dataset
     adaptation_points, adaptation_targets = test_points[:shots], test_targets[:shots]
     adaptation_dataset = (adaptation_points, adaptation_targets)
-    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=100)
+    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=200)
 
     # model = format_model(adapted_model)
     # u_ff_values = plan_inverse_dynamics(robot, model, x_target_values)
@@ -76,7 +76,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml']):
     # model = robot.inverse_dynamics
 # for model_name, model in models.items():
 
-    x_values, u_values = robot.control_loop(x_target_values, u_ff_values, plot)
+    x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
 
     color = color_choice[metamodel_name]
 
@@ -96,7 +96,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml']):
 
 dynamics_model = robot.inverse_dynamics
 u_ff_values = robot.plan_inverse_dynamics(dynamics_model, x_target_values)
-x_values, u_values = robot.control_loop(x_target_values, u_ff_values, plot)
+x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
 plt.subplot(2, 1, 1)
 plt.plot(u_ff_values.squeeze(), lw=2.5, color='indigo', alpha=.8)
 plt.subplot(2, 1, 2)
