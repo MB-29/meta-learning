@@ -16,15 +16,15 @@ class ActuatedArm(ActuatedSystem):
     ml_values_train = np.array( [1., 2.])
     mll_values_train = np.array([1., 2.5])
     parameter_grid_train = np.meshgrid(I2_values_train, mll_values_train, ml_values_train)
-    W_train = np.vstack(map(np.ravel, parameter_grid_train)).T
+    W_train = np.vstack(list(map(np.ravel, parameter_grid_train))).T
 
     training_task_n_trajectories = 1
 
     ml_values_test = np.array([.8, 1.5])
-    I2_values_test = np.array([1.5, 2.5])
+    I2_values_test = np.array([.25, .4])
     mll_values_test = np.array([1.0, 2.0])
     parameter_grid_test = np.meshgrid(I2_values_test, mll_values_test, ml_values_test)
-    W_test = np.vstack(map(np.ravel, parameter_grid_test)).T
+    W_test = np.vstack(list(map(np.ravel, parameter_grid_test))).T
 
 
     test_task_n_trajectories = 1
@@ -33,20 +33,23 @@ class ActuatedArm(ActuatedSystem):
     Nt = 200
     t_values = dt*np.arange(Nt)
     gamma = 5
-    n_trajectories = 8
+    n_trajectories = 16
     U_values = np.zeros((n_trajectories, Nt, 1))
     x0_values = np.zeros((n_trajectories, 4))
     for traj_index in range(n_trajectories):
-        period = 100*(traj_index//2+1)*dt
+        period = 100*(traj_index//8+1)*dt
         phase = traj_index//4 * np.pi/2 - np.pi
         U_values[traj_index] = gamma*(np.sin(2*np.pi*t_values/period + phase)).reshape(-1, 1)
-        x0_values[traj_index, 0] = traj_index * np.pi/4
+        x0_values[traj_index] = 5*np.random.randn(4)
+        # x0_values[traj_index, 0] = traj_index * np.pi
+        # x0_values[traj_index, 1] = 5*(2*traj_index//2-1)
+        # x0_values[traj_index, 2] = (traj_index-1) * np.pi/2
         # U_values[2*traj_index+1] = -gamma*(np.sin(2*np.pi*t_values/(100(traj_index+1)*dt))).reshape(-1, 1)
     # U_values[1] = -gamma*(np.sin(2*np.pi*t_values/(75*dt))).reshape(-1, 1)
     # U_values[2] = gamma*(np.cos(2*np.pi*t_values/(50*dt))).reshape(-1, 1)
     # U_values[3] = -gamma*(np.cos(2*np.pi*t_values/(10*dt))).reshape(-1, 1)
     
-    x0_values[:, 2] = 1
+    # x0_values[:, 2] = 1
     # x0_values[::2, 2] = np.pi
     # U_values[200:] = gamma*(np.sin(2*np.pi*t_values[200:]/(Nt/2*dt))).reshape(-1, 1)
 

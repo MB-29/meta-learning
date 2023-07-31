@@ -43,9 +43,9 @@ class Robot:
         dx = x_dot * self.dt
         # noise =  self.sigma * np.random.randn(self.d)
         # dx += noise
-        print(dx)
+        # print(dx)
         self.x += dx
-        self.x = np.clip(self.x, self.x_min, self.x_max)
+        # self.x = np.clip(self.x, self.x_min, self.x_max)
         return dx
 
     def reset(self, x0=None):
@@ -53,14 +53,14 @@ class Robot:
         self.x = x0.copy()
 
     
-    def d_dynamics(self, x, u):
+    def d_dynamics(self, z):
         raise NotImplementedError
     
     def plot_system(self, x, u):
         raise NotImplementedError
 
     def actuate(self, u_values, x0=None):
-        print(x0)
+        # print(x0)
         T = u_values.shape[0]
         self.reset(x0)
         x_values = np.zeros((T+1, self.d))
@@ -71,9 +71,9 @@ class Robot:
             u = u_values[t]
             self.step(u)
 
-            self.plot_system(x, u, t)
-            plt.pause(0.1)
-            plt.close()
+            # self.plot_system(x, u, t)
+            # plt.pause(0.1)
+            # plt.close()
         x_values[T] = self.x.copy()
         # z_values = np.concatenate((x_values, u_values), axis=1)
         return x_values
@@ -86,45 +86,52 @@ class Robot:
             x_ = x_target_values[t+1]
             x_dot = (x_ - x)/self.dt
             u_ff = model(x, x_dot)
-            u_ff_values[t] = u_ff
+            u_ff_values[t] = u_ff.sum()
         return u_ff_values
     
-    def control_loop(self, x_target_values, u_ff_values, plot=None):
-        self.reset()
-        state_values = np.zeros_like(x_target_values)
+    def control_loop(self, u_ff_values, x_target_values, x0=None, plot=None):
+        self.reset(x0)
+        T = u_ff_values.shape[0]
+        state_values = np.zeros((T+1, self.d))
         u_values = np.zeros_like(u_ff_values)
-        T = x_target_values.shape[0]-1
-        target_tip_positions = self.compute_tip_positions(x_target_values)
+        # target_tip_positions = self.compute_tip_positions(x_target_values)
         for t in range(T):
             x = self.x.copy()
             state_values[t] = x
             u_ff = u_ff_values[t]
             x_target = x_target_values[t]
 
-            obs = self.observe(x)
-            obs_target = self.observe(x_target)
-            e = obs - obs_target
-            u_b = self.K @ e
-            
-            target_tip = target_tip_positions[t, :] 
-            tip  = self.compute_tip_positions(x.reshape(1, -1))
-            residual = target_tip[0] - tip[0, 0]
-            u_b = 10*np.array([residual])
+            obs = self.compute_tip_positions(x.reshape(1, -1))
+            obs_target = self.compute_tip_positions(x_target.reshape(1, -1))
+            e_p = (obs_target - obs).squeeze()
+            u_p = 0*self.K @ e_p
 
-            u = u_ff + u_b
+            e_d = x_target[1::2] - x[1::2] 
+            u_d = 0*self.K @ e_d
+
+            
+            # target_tip = target_tip_positions[t, :] 
+            # tip  = self.compute_tip_positions(x.reshape(1, -1))
+            # residual = target_tip[0] - tip[0, 0]
+            # u_p = 10*np.array([residual])
+
             u = u_ff 
+            u = u_ff + u_p + u_d
+
             self.step(u)
 
             u_values[t] = u
 
             if plot is None:
                 continue
+            # x_target_values = plot['x_target_values']
             u_target_values = plot['u_target_values']
             self.plot_system(x_target, u_target_values[t], t, alpha=0.2)
-            # self.plot_system(x, u, t)
-            plt.scatter(*target_tip_positions[t], color="red")
+            self.plot_system(x, u, t)
+            # plt.scatter(*target_tip_positions[t], color="red")
             plt.pause(0.1)
-            plt.close()
+            plt.close() 
         state_values[-1] = self.x.copy()
         # z_values = np.concatenate((state_values[:-1], u_values), axis=1)
         return state_values, u_values
+    

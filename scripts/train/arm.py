@@ -9,7 +9,7 @@ from models import TLDR, MAML, ANIL, CoDA
 from meta_training import meta_train, test_model
 
 system = ActuatedArm()
-d, r = system.d, system.r
+d, r = system.d, 5
 
 meta_dataset = system.generate_training_data()
 T_train = len(meta_dataset)
@@ -17,20 +17,24 @@ test_dataset = system.generate_test_data()
 T_test = len(test_dataset)
 
 V_net = torch.nn.Sequential(
-    nn.Linear(d, 16),
+    nn.Linear(d, 64),
     nn.Tanh(),
-    nn.Linear(16, 16),
+    nn.Linear(64, 64),
     nn.Tanh(),
-    nn.Linear(16, r),
+    nn.Linear(64, 64),
+    nn.Tanh(),
+    nn.Linear(64, r),
 )
 tldr = TLDR(T_train, r, V_net, c=None)
 
 net = torch.nn.Sequential(
-    nn.Linear(d, 16),
+    nn.Linear(d, 64),
     nn.Tanh(),
-    nn.Linear(16, 16),
+    nn.Linear(64, 64),
     nn.Tanh(),
-    nn.Linear(16, r),
+    nn.Linear(64, 64),
+    nn.Tanh(),
+    nn.Linear(64, r),
     nn.Tanh(),
     nn.Linear(r, 1)
 )
@@ -39,7 +43,7 @@ head = torch.nn.Linear(r, 1)
 
 maml = MAML(T_train, net, lr=0.01)
 anil = ANIL(T_train, V_net, head, lr=0.1)
-mnet = MLP(n_in=d, n_out=1, hidden_layers=[16, 16, r], activation_fn=nn.Tanh())
+mnet = MLP(n_in=d, n_out=1, hidden_layers=[64, 64, 64, r], activation_fn=nn.Tanh())
 coda = CoDA(T_train, 2, mnet)
 
 
@@ -50,17 +54,17 @@ metamodel_choice = {
     'tldr': tldr,
 }
 
-metamodel_name = 'coda'
 metamodel_name = 'maml'
-metamodel_name = 'anil'
 metamodel_name = 'tldr'
+metamodel_name = 'anil'
+metamodel_name = 'coda'
 metamodel = metamodel_choice[metamodel_name]
 
 if __name__ == '__main__':
     np.random.seed(5)
     torch.manual_seed(5)
-    shots = 10
-    adaptation_indices = np.random.randint(200, size=shots)
+    shots = 200
+    adaptation_indices = np.random.randint(shots, size=shots)
     test = {
         'function': test_model,
         'args':{
@@ -69,13 +73,13 @@ if __name__ == '__main__':
             'n_steps': 10,
             }
         }
-    n_gradient = 50_000
-    batch_size = 200
+    n_gradient = 40_000
+    batch_size = 500
     # batch_size = None
     loss_values, test_values = meta_train(
         metamodel,
         meta_dataset,
-        lr=0.002,
+        lr=0.001,
         n_gradient=n_gradient,
         test=test,
         batch_size=batch_size
