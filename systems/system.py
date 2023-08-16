@@ -5,11 +5,10 @@ import torch.nn as nn
 
 class System(nn.Module):
 
-    def __init__(self, W_train, d) -> None:
+    def __init__(self, sigma=0) -> None:
         super().__init__()
-        self.W_train = W_train
-        self.T, self.r_star = W_train.shape
-        self.d = d
+        # self.T, self.r_star = W_train.shape
+        self.sigma = sigma
 
     def V_star(self, x):
         raise NotImplementedError
@@ -17,19 +16,19 @@ class System(nn.Module):
     def c_star(self, x):
         return 0
     
-
-    def generate_data(self, W, n_trajectories):
-        raise NotImplementedError
-    
     def generate_V_data(self):
         return self.V_star(self.grid)
     
     def generate_training_data(self):
-        dataset = self.generate_data(self.W_train, self.training_task_n_trajectories)
+        dataset = self.generate_data(self.W_train)
+        self.T, self.r_star = self.W_train.shape
         return dataset
     
     def generate_test_data(self):
-        return self.generate_data(self.W_test, self.test_task_n_trajectories)
+        dataset = self.generate_data(self.W_test)
+        self.T_test = self.W_test.shape[0]
+        return dataset
+    
     
     def test_model(self, model):
         raise NotImplementedError
@@ -37,7 +36,7 @@ class System(nn.Module):
     def loss(self, meta_model, data):
         raise NotImplementedError
 
-    def generate_data(self, W, n_trajectories):
+    def generate_data(self, W):
         T, r = W.shape
         dataset = []
         for task_index in range(T):
@@ -58,7 +57,9 @@ class StaticSystem(System):
         return environment
 
     def generate_task_dataset(self, environment):
-        task_targets = environment(self.grid).float()
+        values = environment(self.grid).float()
+        noise = self.sigma * torch.randn_like(values)
+        task_targets = values + noise
         task_dataset = (self.grid, task_targets)
         return task_dataset
     
@@ -70,11 +71,15 @@ class ActuatedSystem(System):
     def extract_points(self, state_values):
         raise NotImplementedError
 
-    def extract_data(self, state_values, u_values):
+    def extract_data(self, state_values, u_values=None):
         points = self.extract_points(state_values)
+        if u_values is None:
+            return points
         targets = torch.tensor(u_values).float()
+        noise = self.sigma * torch.randn_like(targets)
+        noisy_targets = targets + noise
 
-        return (points, targets)
+        return (points, noisy_targets)
     
     def generate_task_dataset(self, environment):
         task_points = torch.zeros((self.Nt*self.n_trajectories, self.d))
@@ -83,7 +88,7 @@ class ActuatedSystem(System):
             U = self.U_values[trajectory_index]
             state_values = environment.actuate(U, x0=self.x0_values[trajectory_index])
             task_targets[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = torch.tensor(U).float().squeeze()
-            task_points[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = self.extract_points(state_values)
+            task_points[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = self.extract_points(state_values) 
         task_dataset = (task_points, task_targets) 
         return task_dataset
     

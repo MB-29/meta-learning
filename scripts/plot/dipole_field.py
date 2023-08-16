@@ -17,7 +17,7 @@ rc('text.latex', preamble=[r'\usepackage{amsmath}', r'\usepackage{amsfonts}'])
 np.random.seed(10)
 torch.manual_seed(10)
 
-system = Dipole()
+system = Dipole(sigma=1e-3)
 test_dataset = system.generate_test_data()
 T_test = len(test_dataset)
 n_shots = 2
@@ -30,13 +30,13 @@ title_choice = {'maml': r'MAML', 'tldr': r'TLDR', 'coda': 'darkblue', 'anil': 'p
 
 
 
-fig = plt.figure(figsize=(8, 6))
+fig = plt.figure(figsize=(5, 4))
 # fig = plt.figure()
 fig.set_tight_layout(True)
 
 T_display=2
-plt.suptitle(r'electric dipole moment, 2-shot adaptation at points \qquad'+ ' ')
-fig.text(0.83, 0.96, r'$\times$', color='red', fontsize=15)
+# plt.suptitle(r'electric dipole moment, 2-shot adaptation at points \qquad'+ ' ')
+# fig.text(0.83, 0.96, r'$\times$', color='red', fontsize=15)
 for task_index in range(T_display):
     adaptation_indices = np.random.randint(400, size=n_shots)
 
@@ -94,6 +94,6 @@ for task_index in range(T_display):
 # plt.gcf().text(-0.01, .5, r'dipole 1', fontsize=15,)
 # for task_index in range(T_display):
     # system.plot_potential(potential_map)
-plt.savefig(f'output/plots/dipole_field.png')
+plt.savefig(f'output/plots/dipole_field.pdf')
 plt.show()
 

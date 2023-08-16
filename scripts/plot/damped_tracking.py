@@ -15,7 +15,8 @@ torch.manual_seed(5)
 system = DampedActuatedCartpole()
 
 dt = 0.02
-sigma, alpha, beta = 0, 0., 0.1
+sigma = .0001
+alpha, beta = 0., 0.1
 gamma = 5
 Mass, mass = 1.5, .6
 Mass, mass = 1.2, .25
@@ -23,7 +24,7 @@ Mass, mass = 1.4, .7
 Mass, mass = 1.9, .5
 # Mass, mass = .9, .2
 l = 1
-robot = Cartpole(mass, Mass, l, alpha, beta)
+robot = Cartpole(mass, Mass, l, alpha, beta, sigma=sigma)
 
 
 # d = robot.d
@@ -48,15 +49,13 @@ plot = {'u_target_values': u_target_values, 'x_target_values': x_target_values}
 plot = None
 
 
-
 n_gradient = 50_000
-shots = 3
-fig = plt.figure(figsize=(8, 6))
+shots = 40
+fig = plt.figure(figsize=(5, 4))
 fig.set_tight_layout(True)
-
 # for model_index, metamodel_name in enumerate(['tldr']):
-# for model_index, metamodel_name in enumerate(['tldr', 'anil', 'maml']):
-for model_index, metamodel_name in enumerate(['tldr', 'maml', 'coda']):
+for model_index, metamodel_name in enumerate(['tldr', 'anil']):
+# for model_index, metamodel_name in enumerate(['tldr', 'anil', 'maml', 'coda']):
 
     metamodel = metamodel_choice[metamodel_name]
     path = f'output/models/damped_cartpole/{metamodel_name}_{n_gradient}.ckpt'
@@ -67,7 +66,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml', 'coda']):
     test_points, test_targets = test_dataset
     adaptation_points, adaptation_targets = test_points[:shots], test_targets[:shots]
     adaptation_dataset = (adaptation_points, adaptation_targets)
-    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=200)
+    adapted_model = metamodel.adapt_task_model(adaptation_dataset, n_steps=00)
 
     # model = format_model(adapted_model)
     # u_ff_values = plan_inverse_dynamics(robot, model, x_target_values)
@@ -103,6 +102,8 @@ plt.subplot(2, 1, 2)
 tip_height = x_values[:, 0] + l*np.sin(x_values[:, 2])
 tip_height = -l*np.cos(x_values[:, 2])
 plt.plot(tip_height, color='indigo', lw=2.5, alpha=.8, label='analytic')
+# plt.gca().get_yaxis().set_label_coords(-0.1,0.5)
+
 error_values = robot.evaluate_tracking(x_values, x_target_values)
 print(f'analytic model, total error {error_values.sum()}')
 
@@ -116,13 +117,16 @@ plt.xlabel(r'time')
 tip_height = x_target_values[:, 0] + l*np.sin(x_target_values[:, 2])
 tip_height = -l*np.cos(x_target_values[:, 2])
 plt.plot(tip_height, color='black', ls='--', lw=2.5, label='target')
+# plt.gca().get_yaxis().set_label_coords(-0.2,0.5)
 error_values = robot.evaluate_tracking(x_values, x_target_values)
-plt.suptitle(r'damped cartpole inverse dynamics tracking')
+# plt.suptitle(r'damped cartpole inverse dynamics tracking')
+plt.suptitle(r'cartpole')
 # plt.subplot(2, 1, 3)
 # plt.plot(error_values, ls='--', color='black')
 
 # plt.plot(error_values, label='target')
+fig.align_labels()
 
-plt.legend(loc='center left')
+# plt.legend(loc='center left')
 plt.savefig('output/plots/tracking_damped_cartpole.pdf')
 plt.show()

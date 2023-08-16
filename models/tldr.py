@@ -56,6 +56,9 @@ class TLDR(MetaModel):
         #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
         #     self.task_models.append(model)
         # return self.task_models
+    def forward(self, x):
+        y = self.V(x)@self.W[0]
+        return y
 
     def parametrizer(self, task_index, dataset):
         w = self.W[task_index]
@@ -101,6 +104,11 @@ class TLDR(MetaModel):
     #     w = torch.tensor(w_hat, dtype=torch.float)
     #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
     #     return model
+    def get_context(self, meta_dataset, n_steps):
+        self.context_values = self.W
+        return self.context_values
+    
+    
     def adapt_task_model(self, data, **kwargs):
         points, targets = data
         V = self.V_hat if self.V_hat is not None else self.V
@@ -112,6 +120,7 @@ class TLDR(MetaModel):
         Y = (targets - c_values).view(-1)
         # print(X.shape)
         # print(Y.shape)
+        
         
         w_hat, _, _, _ = np.linalg.lstsq(X, Y, rcond=None)
         w = torch.tensor(w_hat, dtype=torch.float)
