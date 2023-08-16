@@ -18,6 +18,8 @@ class MAML(MetaModel):
         self.n_inner = n_inner
         self.inner_learner = l2la.MAML(net, lr, first_order=False)
         
+    def forward(self, x):
+        return self.inner_learner(x)
     
     def parametrizer(self, task_index, dataset):
         task_dataset = dataset[task_index]
@@ -46,15 +48,15 @@ class MAML(MetaModel):
         learner = self.gradient_steps(points, targets, n_steps)
         return learner
 
-    def adapt_heads(self, dataset, n_steps):
+    def get_context(self, dataset, n_steps):
         T = len(dataset)
-        W = torch.zeros(T, 2)
+        context_values = torch.zeros(T, 2)
         for task_index in range(T):
             data = dataset[task_index]
             task_model = self.adapt_task_model(data, n_steps)
-            W[task_index] = task_model.module[-1].weight
-        self.W = W
-        return W
+            context_values[task_index] = task_model.module[-1].weight
+        self.context_values = context_values
+        return context_values
 
 class BodyHead(nn.Module):
     def __init__(self, body, head, **kwargs) -> None:
@@ -72,6 +74,9 @@ class ANIL(MAML):
         self.body = body
         self.r = self.body[-1].weight.shape[0]
 
+    def forward(self, x):
+        return self.inner_learner(self.body(x))
+    
     def parametrizer(self, task_index, dataset):
         # print(f'body {self.body[0].weight}')
         task_dataset = dataset[task_index]
@@ -88,14 +93,14 @@ class ANIL(MAML):
         head = self.gradient_steps(features, targets, n_steps, plot=plot)
         return BodyHead(self.body, head)
     
-    def adapt_heads(self, dataset, n_steps):
+    def get_context(self, dataset, n_steps):
         T = len(dataset)
-        W = torch.zeros(T, self.r)
+        context_values = torch.zeros(T, self.r)
         for task_index in range(T):
             data = dataset[task_index]
             task_model = self.adapt_task_model(data, n_steps, plot=False)
-            W[task_index] = task_model.head.module.weight
-        self.W = W
-        return W
+            context_values[task_index] = task_model.head.module.weight
+        self.context_values = context_values
+        return context_values
 
 

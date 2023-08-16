@@ -82,6 +82,7 @@ class CoDA(MetaModel):
             adapter.step()
             # print(f'adapt, step{adaptation_step}')
         if plot:
+            plt.figure()
             plt.plot(train_error_values) ; plt.yscale('log') ; plt.show()
         # plt.pause(0.1)  ; plt.close()
         model = TaskCoDA(self.mnet, task_weights)
@@ -90,9 +91,11 @@ class CoDA(MetaModel):
     def regularization(self):
         r_xi = 1e-5*(torch.norm(self.Xi, p=1, dim=1)**2).sum()
         W = list(self.hnet.parameters())[0]
-        r_W = 1e-5*torch.norm(W, p=2, dim=1).sum()
+        r_W = 1e-2*torch.norm(W, p=2, dim=1).sum()
         return r_xi + r_W
-
+    def get_context(self, dataset, n_steps):
+        self.context_values = self.Xi.squeeze().T
+        return self.context_values
     # def save(self, path):
     #     information = {'state_dict': self.hnet.state_dict()}
     #     save_checkpoint(information, path, 0)
