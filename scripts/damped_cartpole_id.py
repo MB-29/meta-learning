@@ -19,9 +19,10 @@ dt = 0.02
 sigma, alpha, beta = 0, 0., 0.1
 gamma = 5
 Mass, mass = 1.5, .6
-Mass, mass = 1.2, .25
-Mass, mass = 1.4, .7
+# Mass, mass = 1.2, .25
+# Mass, mass = 1.4, .7
 Mass, mass = .9, .2
+Mass, mass = 1.5,.3
 mass_values = np.array(
     [[0.8, 0.2],
      [1.8, 0.2],
@@ -73,22 +74,22 @@ fig.set_tight_layout(True)
 metamodel_name = 'tldr'
 metamodel_name = 'anil'
 metamodel_name = 'maml'
-# for metamodel_name in ['tldr', 'anil']:
-for metamodel_name in ['tldr']:
+for metamodel_name in ['tldr', 'anil', 'coda']:
+# for metamodel_name in ['coda']:
+# for metamodel_name in ['tldr']:
     metamodel = metamodel_choice[metamodel_name]
     path = f'output/models/damped_cartpole/{metamodel_name}_{n_gradient}.ckpt'
     checkpoint = torch.load(path)
     metamodel.load_state_dict(checkpoint)
     print(f'metamodel {metamodel_name}')
 
-    if metamodel_name in ['maml', 'anil']:
-        metamodel.adapt_heads(meta_dataset, n_steps=50)
-    W_bar = metamodel.W.data
+    metamodel.get_context(meta_dataset, n_steps=50)
+    W_bar = metamodel.context_values.data
     T_train = system.T
     tldr = TLDR(T_train, r, V_net, W=W_bar)
     V_hat, W_hat = tldr.calibrate(mass_values)
 
-    shot_values = np.arange(2, 20)
+    shot_values = np.arange(0, 11)
     for shots in shot_values:
         test_dataset = system.extract_data(x_target_values, u_target_values)
         test_points, test_targets = test_dataset
@@ -99,6 +100,7 @@ for metamodel_name in ['tldr']:
         parameter_error = torch.norm(adapted_model.w - w_star)
         plt.scatter(shots, parameter_error, marker='x',
                     color=color_choice[metamodel_name])
+        # plt.scatter(shots, parameter_error, color=color_choice[metamodel_name])
 plt.yscale('log')
 plt.show()
 

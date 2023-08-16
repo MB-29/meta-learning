@@ -1,5 +1,4 @@
-from systems.system import System
-
+import pickle
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
@@ -32,36 +31,39 @@ class ActuatedCartpole(ActuatedSystem):
 
     test_task_n_trajectories = 1
 
-    dt = 0.02
-    Nt = 200
-    t_values = dt*np.arange(Nt)
-    gamma = 5
-    n_trajectories = 8
-    U_values = np.zeros((n_trajectories, Nt, 1))
-    for traj_index in range(n_trajectories):
-        period = 100*(traj_index//2+1)*dt
-        phase = traj_index//4 * np.pi/2 - np.pi
-        U_values[traj_index] = gamma*(np.sin(2*np.pi*t_values/period + phase)).reshape(-1, 1)
-        # U_values[2*traj_index+1] = -gamma*(np.sin(2*np.pi*t_values/(100(traj_index+1)*dt))).reshape(-1, 1)
-    # U_values[1] = -gamma*(np.sin(2*np.pi*t_values/(75*dt))).reshape(-1, 1)
-    # U_values[2] = gamma*(np.cos(2*np.pi*t_values/(50*dt))).reshape(-1, 1)
-    # U_values[3] = -gamma*(np.cos(2*np.pi*t_values/(10*dt))).reshape(-1, 1)
     
+    Nt = 200
+    n_trajectories = 8
     x0_values = np.zeros((n_trajectories, 4))
     x0_values[::2, 2] = np.pi
-    # U_values[200:] = gamma*(np.sin(2*np.pi*t_values[200:]/(Nt/2*dt))).reshape(-1, 1)
+
+    # self.U_values[200:] = gamma*(np.sin(2*np.pi*t_values[200:]/(Nt/2*dt))).reshape(-1, 1)
 
 
-    def __init__(self, beta=0) -> None:
-        super().__init__(self.W_train, self.d)
+    def __init__(self, dt = 0.02, beta=0, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.dt = dt
         self.beta = beta
         self.test_data = None
+
+
+        t_values = dt*np.arange(self.Nt)
+        gamma = 5
+        self.U_values = np.zeros((self.n_trajectories, self.Nt, 1))
+        for traj_index in range(self.n_trajectories):
+            period = 100*(traj_index//2+1)*dt
+            phase = traj_index//4 * np.pi/2 - np.pi
+            self.U_values[traj_index] = gamma*(np.sin(2*np.pi*t_values/period + phase)).reshape(-1, 1)
+            # self.U_values[2*traj_index+1] = -gamma*(np.sin(2*np.pi*t_values/(100(traj_index+1)*dt))).reshape(-1, 1)
+        # self.U_values[1] = -gamma*(np.sin(2*np.pi*t_values/(75*dt))).reshape(-1, 1)
+        # self.U_values[2] = gamma*(np.cos(2*np.pi*t_values/(50*dt))).reshape(-1, 1)
+        # self.U_values[3] = -gamma*(np.cos(2*np.pi*t_values/(10*dt))).reshape(-1, 1)
+        
 
     def V_star(self, x):
         dd_y, cphi, sphi, d_phi, dd_phi  = torch.unbind(x, dim=1)
         v = torch.stack((dd_y, dd_phi*cphi - d_phi**2*sphi), dim=1)
         return v
-
 
     def define_environment(self, w):
         M, ml = w
@@ -70,7 +72,8 @@ class ActuatedCartpole(ActuatedSystem):
 
     
     def extract_points(self, state_values):
-    
+        if state_values.shape[0] <= 1:
+            return torch.zeros(1, self.d)
         velocity_values = (1/self.dt)*np.diff(state_values, axis=0)
         y, d_y, phi, d_phi = state_values[:-1].T
         d_y, dd_y, d_phi, dd_phi = velocity_values.T
@@ -84,11 +87,12 @@ class DampedActuatedCartpole(ActuatedCartpole):
 
     d, m, r = 6, 1, 3
 
-    def __init__(self) -> None:
-        super().__init__(beta=0.1)
+    def __init__(self, dt = 0.02, **kwargs) -> None:
+        super().__init__(dt=dt, beta=0.1, **kwargs)
 
     def extract_points(self, state_values):
-    
+        if state_values.shape[0] <= 1:
+            return torch.zeros(1, self.d)
         velocity_values = (1/self.dt)*np.diff(state_values, axis=0)
         y, d_y, phi, d_phi = state_values[:-1].T
         d_y, dd_y, d_phi, dd_phi = velocity_values.T
@@ -96,4 +100,38 @@ class DampedActuatedCartpole(ActuatedCartpole):
         x_values = np.stack((d_y, dd_y, cphi, sphi, d_phi, dd_phi), axis=1)
         points = torch.tensor(x_values).float()
         return points
+
+class Upkie(DampedActuatedCartpole):
+
+    def __init__(self, dt=1/200, **kwargs) -> None:
+        super().__init__(dt, **kwargs)
+
+    def generate_training_data(self):
+        with open(f'data/train/dataset.pkl', 'rb') as file:
+            dataset = pickle.load(file)
+        self.T = len(dataset)
+        return dataset
+    
+    def generate_test_data(self):
+        with open(f'data/test/dataset.pkl', 'rb') as file:
+            dataset = pickle.load(file)
+        self.T_test = len(dataset)
+        return dataset
+    
+class WheelUpkie(DampedActuatedCartpole):
+
+    def __init__(self, dt=1/200, **kwargs) -> None:
+        super().__init__(dt, **kwargs)
+
+    def generate_training_data(self):
+        with open(f'data/velocity/train/dataset.pkl', 'rb') as file:
+            dataset = pickle.load(file)
+        self.T = len(dataset)
+        return dataset
+    
+    def generate_test_data(self):
+        with open(f'data/velocity/test/dataset.pkl', 'rb') as file:
+            dataset = pickle.load(file)
+        self.T_test = len(dataset)
+        return dataset
     

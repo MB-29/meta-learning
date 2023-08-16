@@ -12,7 +12,7 @@ class ActuatedArm(ActuatedSystem):
 
     d, m, r = 8, 1, 3
 
-    I2_values_train = np.array([1/3., 4.0/3])
+    I2_values_train = np.array([1/3., 2.0/3])
     ml_values_train = np.array( [1., 2.])
     mll_values_train = np.array([1., 2.5])
     parameter_grid_train = np.meshgrid(I2_values_train, mll_values_train, ml_values_train)
@@ -20,8 +20,8 @@ class ActuatedArm(ActuatedSystem):
 
     training_task_n_trajectories = 1
 
-    ml_values_test = np.array([.8, 1.5])
-    I2_values_test = np.array([.25, .4])
+    I2_values_test = np.array([1.5/3, 2.5/3.])
+    ml_values_test = np.array([1.2, 1.7])
     mll_values_test = np.array([1.0, 2.0])
     parameter_grid_test = np.meshgrid(I2_values_test, mll_values_test, ml_values_test)
     W_test = np.vstack(list(map(np.ravel, parameter_grid_test))).T
@@ -33,14 +33,16 @@ class ActuatedArm(ActuatedSystem):
     Nt = 200
     t_values = dt*np.arange(Nt)
     gamma = 5
-    n_trajectories = 16
+    n_trajectories = 5
     U_values = np.zeros((n_trajectories, Nt, 1))
     x0_values = np.zeros((n_trajectories, 4))
     for traj_index in range(n_trajectories):
         period = 100*(traj_index//8+1)*dt
         phase = traj_index//4 * np.pi/2 - np.pi
+        # magnitude = gamma/4 * (traj_index%4 +1) 
+        # print(magnitude)
         U_values[traj_index] = gamma*(np.sin(2*np.pi*t_values/period + phase)).reshape(-1, 1)
-        x0_values[traj_index] = 5*np.random.randn(4)
+        x0_values[traj_index] = np.random.randn(4)
         # x0_values[traj_index, 0] = traj_index * np.pi
         # x0_values[traj_index, 1] = 5*(2*traj_index//2-1)
         # x0_values[traj_index, 2] = (traj_index-1) * np.pi/2
@@ -54,8 +56,8 @@ class ActuatedArm(ActuatedSystem):
     # U_values[200:] = gamma*(np.sin(2*np.pi*t_values[200:]/(Nt/2*dt))).reshape(-1, 1)
 
 
-    def __init__(self, alpha=0.2) -> None:
-        super().__init__(self.W_train, self.d)
+    def __init__(self, alpha=.5, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.alpha = alpha
         self.test_data = None
 
@@ -85,12 +87,4 @@ class ActuatedArm(ActuatedSystem):
         x_values = np.stack((cphi1, sphi1, d_phi1, dd_phi1, cphi2, sphi2, d_phi2, dd_phi2), axis=1)
         points = torch.tensor(x_values).float()
         return points
-    
-
-class DampedActuatedArm(ActuatedArm):
-
-
-    def __init__(self) -> None:
-        super().__init__(alpha=0.1)
-
     

@@ -40,7 +40,7 @@ head = torch.nn.Linear(r, 1)
 maml = MAML(T_train, net, lr=0.01)
 anil = ANIL(T_train, V_net, head, lr=0.1)
 mnet = MLP(n_in=d, n_out=1, hidden_layers=[16, 16, r], activation_fn=nn.Tanh())
-coda = CoDA(T_train, 2, mnet)
+coda = CoDA(T_train, r, mnet)
 
 
 metamodel_choice = {
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         'args':{
             'test_dataset': test_dataset,
             'adaptation_indices': adaptation_indices,
-            'n_steps': 10,
+            'n_steps': 100,
             }
         }
     n_gradient = 50_000

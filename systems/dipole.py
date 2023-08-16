@@ -34,6 +34,10 @@ class Dipole(StaticSystem):
     p_values_adaptation = np.array([0.25, 0.7])
     parameter_grid_test = np.meshgrid(U_values_adaptation, p_values_adaptation)
     W_test = np.dstack(parameter_grid_test).reshape(-1, 2)
+    # W_test = np.array([
+    #     [0.1, 0.3],
+    #     [0.1, -0.3],
+    # ])
 
     test_task_n_trajectories = 1
 
@@ -48,8 +52,8 @@ class Dipole(StaticSystem):
     ], 1)
 
 
-    def __init__(self) -> None:
-        super().__init__(self.W_train, self.d)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
 
         self.test_data = None
         

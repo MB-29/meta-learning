@@ -102,7 +102,7 @@ for step in tqdm(range(n_gradient)):
         adaptation_error[test_task_index] = task_adaptation_error
     adaptation_error_values.append(adaptation_error)
 
-    # metamodel.adapt_heads(meta_dataset, n_steps=10)
+    # metamodel.get_context(meta_dataset, n_steps=10)
 
     W_bar = metamodel.W.data
     tldr = TaskLinearMetaModel(T_train, r, V_net, W=W_bar)

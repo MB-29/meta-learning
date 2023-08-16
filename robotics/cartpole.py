@@ -13,13 +13,22 @@ class Cartpole(Robot):
 
     d, m = 4, 1
 
+    K = np.array([[1., 1.]])
 
+    goal_state = torch.tensor([3., 0., -1., 0., 0.])
+    goal_weights = torch.tensor([1., 1., 1., 1., 1.])
 
+    # @staticmethod
+    # def observe(x):
+    #     y, d_y, phi, d_phi = x
+    #     cphi, sphi = np.cos(phi), np.sin(phi)
+    #     obs = np.array([y, d_y, cphi, sphi, d_phi])
+    #     return obs
     @staticmethod
     def observe(x):
-        y, d_y, phi, d_phi = x
-        cphi, sphi = np.cos(phi), np.sin(phi)
-        obs = np.array([y, d_y, cphi, sphi, d_phi])
+        y, d_y, phi, d_phi = torch.unbind(x, dim=1)
+        cphi, sphi = torch.cos(phi), torch.sin(phi)
+        obs = torch.stack((y, d_y, cphi, sphi, d_phi), dim=1)
         return obs
 
     @staticmethod
@@ -29,9 +38,9 @@ class Cartpole(Robot):
         x = torch.stack((y, d_y, phi, d_phi), dim=1)
         return x
 
-    def __init__(self, mass, Mass, l, alpha, beta, dt=0.02, g=9.8):
-        self.x0 = np.array([0.0, 0.0, 0.0, 0.0])
-        super().__init__(self.x0, self.d, self.m, dt)
+    def __init__(self, mass, Mass, l, alpha, beta, dt=0.02, g=9.8, x0=None, sigma=0):
+        self.x0 = np.array([0.0, 0.0, 0.0, 0.0]) if x0 is None else x0
+        super().__init__(self.x0, self.d, self.m, dt, sigma=sigma)
 
         self.g = g
         self.l = l
@@ -52,27 +61,39 @@ class Cartpole(Robot):
 
         self.R = 0.001
 
+
+    def acceleration(self, d_y, cphi, sphi, d_phi, force, friction_y):
+
+
+        dd_y = self.mass*sphi*(self.l*d_phi**2 +self.g*cphi)
+        dd_y += friction_y 
+        dd_y += force
+        dd_y /=  self.Mass + self.mass*sphi**2
+
+        dd_phi =  -self.mass*self.l*d_phi**2*cphi*sphi - self.total_mass*self.g*sphi
+        dd_phi +=  - friction_y
+        dd_phi += -force*cphi
+        dd_phi /= self.l*(self.Mass + self.mass* sphi**2) 
+        return dd_y, dd_phi
+    
     def forward_dynamics(self, x, u):
         # print(x)
         y, d_y, phi, d_phi = x[0], x[1], x[2], x[3]
         force = u[0]
         cphi, sphi = np.cos(phi), np.sin(phi)
-
-        friction_phi = - self.alpha * d_phi
         friction_y = - self.beta * self.total_mass * self.g * np.tanh(d_y)
-
-        dd_y = self.mass*sphi*(self.l*d_phi**2 +self.g*cphi)
-        dd_y += friction_y + friction_phi*cphi/self.l
-        dd_y += force
-        dd_y /=  self.Mass + self.mass*sphi**2
-
-        dd_phi =  -self.mass*self.l*d_phi**2*cphi*sphi - self.total_mass*self.g*sphi
-        dd_phi += self.Mass*friction_phi/(self.mass*self.l) - friction_y
-        dd_phi += -force*cphi
-        dd_phi /= self.l*(self.Mass + self.mass* sphi**2) 
+        dd_y, dd_phi = self.acceleration(d_y, cphi, sphi, d_phi, force, friction_y)
 
         return np.array([d_y, dd_y, d_phi, dd_phi])
     
+    def d_dynamics(self, z):
+        y, d_y, phi, d_phi, u = z.unbind(dim=1)
+        cphi, s_phi = torch.cos(phi), torch.sin(phi)
+        friction_y = - self.beta * self.total_mass * self.g * torch.tanh(d_y)
+        dd_y, dd_phi = self.acceleration(d_y, cphi, s_phi, d_phi, u.squeeze(), friction_y)
+        dx = torch.stack((d_y, dd_y, d_phi, dd_phi), dim=1)
+        return dx
+
     def inverse_dynamics(self, x, x_dot):
         y, d_y, phi, d_phi = x
         d_y, dd_y, d_phi, dd_phi = x_dot
@@ -90,12 +111,6 @@ class Cartpole(Robot):
     #     u_phi = self.mass*self.l*(dd_phi*cphi - d_phi**2*sphi)
     #     return np.array([u_y + u_phi])
     
-    def derive(self, x, x_dot):
-        y, d_y, phi, d_phi = x
-        d_y, dd_y, d_phi, dd_phi = x_dot
-        cphi, sphi = np.cos(phi), np.sin(phi)
-        return np.array([dd_y, cphi, sphi, d_phi, dd_phi])
-    
     def compute_tip_positions(self, state_values):
         y, d_y, phi, d_phi = state_values.T
         cphi, sphi = np.cos(phi), np.sin(phi)
@@ -109,7 +124,6 @@ class Cartpole(Robot):
         error_values = np.linalg.norm(e_values, axis=1)
 
         return error_values
-    
 
 
     def plot_system(self, x, u, t, **kwargs):

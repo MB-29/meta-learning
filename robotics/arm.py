@@ -42,9 +42,9 @@ class Arm(Robot):
     #     obs = np.array([cphi1, sphi1, d_phi1, cphi2, sphi2, d_phi2])
     #     return obs
 
-    def __init__(self, m1, m2, l1, l2, alpha, dt=0.02):
+    def __init__(self, m1, m2, l1, l2, alpha, dt=0.02, sigma=0):
         self.x0 = np.array([0.0, 0.0, 0.0, 0.0])
-        super().__init__(self.x0, self.d, self.m, dt)
+        super().__init__(self.x0, self.d, self.m, dt, sigma=sigma)
 
         self.l1 = l1
         self.m1 = m1

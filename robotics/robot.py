@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 class Robot:
 
-    def __init__(self, x0, d, m, dt):
+    def __init__(self, x0, d, m, dt, sigma=0):
         """
         :param x0: Initial state
         :type x0: array of size d
@@ -19,6 +19,7 @@ class Robot:
         self.d = d
         self.m = m
         self.dt = dt
+        self.sigma = sigma
         self.x0 = x0.copy()
 
         self.x = x0.copy()
@@ -59,21 +60,23 @@ class Robot:
     def plot_system(self, x, u):
         raise NotImplementedError
 
-    def actuate(self, u_values, x0=None):
+    def actuate(self, u_values, x0=None, plot=False):
         # print(x0)
         T = u_values.shape[0]
         self.reset(x0)
         x_values = np.zeros((T+1, self.d))
         for t in range(T):
             x = self.x.copy()
-            x_values[t] = x
+            noise = self.sigma*np.random.randn(*x.shape)
+            x_values[t] = x + noise
             # u = np.random.choice([-1.0, 1.0], size=1)
             u = u_values[t]
             self.step(u)
 
-            # self.plot_system(x, u, t)
-            # plt.pause(0.1)
-            # plt.close()
+            if not plot:
+                continue
+            self.plot_system(x, u, t)
+            plt.pause(0.1) ; plt.close()
         x_values[T] = self.x.copy()
         # z_values = np.concatenate((x_values, u_values), axis=1)
         return x_values
@@ -104,10 +107,10 @@ class Robot:
             obs = self.compute_tip_positions(x.reshape(1, -1))
             obs_target = self.compute_tip_positions(x_target.reshape(1, -1))
             e_p = (obs_target - obs).squeeze()
-            u_p = 0*self.K @ e_p
+            u_p = self.K @ e_p
 
             e_d = x_target[1::2] - x[1::2] 
-            u_d = 0*self.K @ e_d
+            u_d = self.K @ e_d
 
             
             # target_tip = target_tip_positions[t, :] 

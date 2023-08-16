@@ -8,7 +8,9 @@ from systems.arm import ActuatedArm
 from models import TLDR, MAML, ANIL, CoDA
 from meta_training import meta_train, test_model
 
-system = ActuatedArm()
+sigma = 0
+sigma = 1e-4
+system = ActuatedArm(sigma=sigma)
 d, r = system.d, 5
 
 meta_dataset = system.generate_training_data()
@@ -22,6 +24,8 @@ V_net = torch.nn.Sequential(
     nn.Linear(64, 64),
     nn.Tanh(),
     nn.Linear(64, 64),
+    # nn.Tanh(),
+    # nn.Linear(64, 64),
     nn.Tanh(),
     nn.Linear(64, r),
 )
@@ -55,9 +59,9 @@ metamodel_choice = {
 }
 
 metamodel_name = 'maml'
-metamodel_name = 'tldr'
-metamodel_name = 'anil'
 metamodel_name = 'coda'
+metamodel_name = 'anil'
+metamodel_name = 'tldr'
 metamodel = metamodel_choice[metamodel_name]
 
 if __name__ == '__main__':
@@ -70,16 +74,18 @@ if __name__ == '__main__':
         'args':{
             'test_dataset': test_dataset,
             'adaptation_indices': adaptation_indices,
-            'n_steps': 10,
+            'n_steps': 100,
             }
         }
     n_gradient = 40_000
+    n_gradient = 35_000
     batch_size = 500
     # batch_size = None
     loss_values, test_values = meta_train(
         metamodel,
         meta_dataset,
-        lr=0.001,
+        # lr=0.001,
+        lr=0.0002,
         n_gradient=n_gradient,
         test=test,
         batch_size=batch_size
