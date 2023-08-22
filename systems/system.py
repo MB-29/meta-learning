@@ -41,6 +41,8 @@ class System(nn.Module):
         dataset = []
         for task_index in range(T):
             w = W[task_index]
+            # print(f'task {task_index}')
+            # print(f'w {w}')
             environment = self.define_environment(w)
             task_dataset = self.generate_task_dataset(environment)
             dataset.append(task_dataset)
@@ -57,9 +59,7 @@ class StaticSystem(System):
         return environment
 
     def generate_task_dataset(self, environment):
-        values = environment(self.grid).float()
-        noise = self.sigma * torch.randn_like(values)
-        task_targets = values + noise
+        task_targets = environment(self.grid).float()
         task_dataset = (self.grid, task_targets)
         return task_dataset
     
@@ -86,7 +86,7 @@ class ActuatedSystem(System):
         task_targets = torch.zeros((self.Nt*self.n_trajectories))
         for trajectory_index in range(self.n_trajectories): 
             U = self.U_values[trajectory_index]
-            state_values = environment.actuate(U, x0=self.x0_values[trajectory_index])
+            state_values = environment.actuate(U, x0=self.x0_values[trajectory_index], plot=False)
             task_targets[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = torch.tensor(U).float().squeeze()
             task_points[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = self.extract_points(state_values) 
         task_dataset = (task_points, task_targets) 

@@ -10,20 +10,19 @@ from robotics.arm import Arm
     
 class ActuatedArm(ActuatedSystem):
 
-    d, m, r = 8, 1, 3
+    d, m, r = 8, 1, 2
 
-    I2_values_train = np.array([1/3., 2.0/3])
-    ml_values_train = np.array( [1., 2.])
-    mll_values_train = np.array([1., 2.5])
-    parameter_grid_train = np.meshgrid(I2_values_train, mll_values_train, ml_values_train)
+    # l1_values_train = np.array([0.7, 1.])
+    I2_values_train = np.array([0.25, 0.3, 0.4])
+    m2_values_train = np.array( [0.9, 1.0, 1.1])
+    parameter_grid_train = np.meshgrid(I2_values_train, m2_values_train)
     W_train = np.vstack(list(map(np.ravel, parameter_grid_train))).T
 
     training_task_n_trajectories = 1
 
-    I2_values_test = np.array([1.5/3, 2.5/3.])
-    ml_values_test = np.array([1.2, 1.7])
-    mll_values_test = np.array([1.0, 2.0])
-    parameter_grid_test = np.meshgrid(I2_values_test, mll_values_test, ml_values_test)
+    I2_values_test = np.array([0.275, 0.35])
+    m2_values_test = np.array([0.95, 1.2])
+    parameter_grid_test = np.meshgrid(I2_values_test, m2_values_test)
     W_test = np.vstack(list(map(np.ravel, parameter_grid_test))).T
 
 
@@ -69,11 +68,11 @@ class ActuatedArm(ActuatedSystem):
 
     def define_environment(self, w):
         # print(f'w = {w}')
-        I2, mll, ml = w
-        l2 = 3*I2/ml
-        l1 = mll/ml
-        m2 = ml/l2
-        arm = Arm(1., m2, l1, l2, self.alpha)
+        I2, m2 = w
+        # l2 = 3*I2/ml
+        # l1 = mll/ml
+        # m2 = ml/l2
+        arm = Arm(I2, m2, alpha=self.alpha)
         return arm
 
     

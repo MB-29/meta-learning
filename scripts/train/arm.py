@@ -11,7 +11,7 @@ from meta_training import meta_train, test_model
 sigma = 0
 sigma = 1e-4
 system = ActuatedArm(sigma=sigma)
-d, r = system.d, 5
+d, r = system.d, 4
 
 meta_dataset = system.generate_training_data()
 T_train = len(meta_dataset)
@@ -48,7 +48,7 @@ head = torch.nn.Linear(r, 1)
 maml = MAML(T_train, net, lr=0.01)
 anil = ANIL(T_train, V_net, head, lr=0.1)
 mnet = MLP(n_in=d, n_out=1, hidden_layers=[64, 64, 64, r], activation_fn=nn.Tanh())
-coda = CoDA(T_train, 2, mnet)
+coda = CoDA(T_train, r, mnet)
 
 
 metamodel_choice = {
@@ -58,10 +58,10 @@ metamodel_choice = {
     'tldr': tldr,
 }
 
+metamodel_name = 'tldr'
+metamodel_name = 'anil'
 metamodel_name = 'maml'
 metamodel_name = 'coda'
-metamodel_name = 'anil'
-metamodel_name = 'tldr'
 metamodel = metamodel_choice[metamodel_name]
 
 if __name__ == '__main__':

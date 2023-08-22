@@ -9,41 +9,52 @@ from systems import ActuatedArm
 from scripts.train.arm import metamodel_choice
 from scripts.plot.layout import color_choice
 
-np.random.seed(5)
-torch.manual_seed(5)
+# np.random.seed(5)
+# torch.manual_seed(5)
 
 system = ActuatedArm()
 
-gamma = 3.2
 sigma = 0
 sigma = 1e-4
-m2, l1, l2 = 3., 4.95, 1.11
-I2, mll, ml = system.W_test[-2]
-I2, mll, ml = .7, .7, .7
-I2, mll, ml = .3, 1., .8
-l2 = 3*I2/ml
-l1 = mll/ml
-m2 = ml/l2
+
+# m2, l1, l2 = 3., 4.95, 1.11
+# I2, mll, ml = system.W_test[-2]
+# I2, mll, ml = .7, .7, .7
+# I2, mll, ml = .3, 1., .8
+# I2, mll, ml = .3, 1., .8
+# l2 = 3*I2/ml
+# l1 = mll/ml
+# m2 = ml/l2
 # arm = Arm(1., m2, l1, l2, self.alpha)
-robot = Arm(1., m2, l1, l2, system.alpha, sigma=sigma)
-dt = robot.dt
+# l1, l2, m2 = 1.2, 1.4, 1.5
+# l1, l2, m2 = 0.6, 0.7, 0.9
+
+gamma = 5
+I2, m2 = 0.38, 1.2  
 shots = 30
+T = 400
+
+gamma = 8
+I2, m2 = 1., 3.0
+T = 200
+shots = 70
+robot = Arm(I2, m2, system.alpha, sigma=sigma)
+dt = robot.dt
 
 plot = False
 # plot = True
 # d = robot.d
-T = 400
 def law(t):
     # magnitude = gamma/2 + (t/(T*dt))*gamma/2
-    magnitude = lambda u: gamma * np.tanh((3+t/(T*dt))*u)
+    magnitude = lambda u: gamma * np.tanh((2+t/(T*dt))*u)
     # period = dt*(100 - 20*np.exp(-(t-dt*T/2)**2))
-    period = 100*dt + (t/(T*dt))*50*dt
+    period = 100*dt + (t/(T*dt))*10*dt
     return magnitude(np.sin(2*np.pi*t/(period)))
 # def law(t):
 #     magnitude = gamma
 #     # period = dt*(100 - 20*np.exp(-(t-dt*T/2)**2))
 #     period = 100*dt
-    # return magnitude*np.sin(2*np.pi*t/(period))
+#     return magnitude*np.sin(2*np.pi*t/(period))
 t_values = dt*np.arange(T)
 u_target_values = law(t_values).reshape(-1, 1)
 x_target_values = robot.actuate(u_target_values, plot=plot)
@@ -61,9 +72,10 @@ n_gradient = 35_000
 fig = plt.figure(figsize=(4, 4))
 fig.set_tight_layout(True)
 
-for model_index, metamodel_name in enumerate(['tldr']):
+# for model_index, metamodel_name in enumerate(['tldr']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil']):
-# for model_index, metamodel_name in enumerate(['tldr', 'anil', 'coda']):
+# for model_index, metamodel_name in enumerate(['tldr', 'maml']):
+for model_index, metamodel_name in enumerate(['tldr', 'anil', 'coda']):
 
     metamodel = metamodel_choice[metamodel_name]
     path = f'output/models/arm/{metamodel_name}_{n_gradient}.ckpt'

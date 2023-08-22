@@ -31,7 +31,7 @@ class Arm(Robot):
 
     g = 9.8
 
-    K = np.array([[1., 1.]])
+    K = np.array([[.5, .5]])
 
 
     # @staticmethod
@@ -42,31 +42,30 @@ class Arm(Robot):
     #     obs = np.array([cphi1, sphi1, d_phi1, cphi2, sphi2, d_phi2])
     #     return obs
 
-    def __init__(self, m1, m2, l1, l2, alpha, dt=0.02, sigma=0):
+    def __init__(self, I2, m2, alpha, dt=0.02, sigma=0):
         self.x0 = np.array([0.0, 0.0, 0.0, 0.0])
         super().__init__(self.x0, self.d, self.m, dt, sigma=sigma)
 
-        self.l1 = l1
-        self.m1 = m1
         self.m2 = m2
-        self.l1 = l1
-        self.l2 = l2
-        self.I1 = m1*l1**2/3
-        self.I2 = m2*l2**2/3
+        self.I2 = I2
+        self.m1 = 1.0
+        self.l1 = 1.0
+        self.l2 = 1.0
+        self.I1 = self.m1*self.l1**2/3
         self.I = self.I1 + self.I2
         self.alpha = alpha
         # self.l1 = 1
         # self.m1 = 1
         # self.m2 = 1
         # self.l2 = 1
-        self.I1 = self.m1*self.l1**2/3
-        self.I2 = self.m2*self.l2**2/3
+        # self.I1 = self.m1*self.l1**2/3
+        # self.I2 = self.m2*self.l2**2/3
         self.I = self.I1 + self.I2
         # self.alpha = .2
 
         # print(f'm1 = {m1}, m2 = {m2}, l1 = {l1}, l2 = {l2}')
 
-        self.omega_2 = self.g/l1
+        self.omega_2 = self.g/self.l1
         self.period = 2*np.pi * np.sqrt(1 / self.omega_2)
 
 
@@ -84,6 +83,7 @@ class Arm(Robot):
 
     def forward_dynamics(self, x, u):
         phi1, d_phi1, phi2, d_phi2 = x
+        # print(x)
         cphi1, sphi1 = np.cos(phi1), np.sin(phi1)
         cphi2, sphi2 = np.cos(phi2), np.sin(phi2)
         M, C, tau = self.rigid_body(cphi1, sphi1, cphi2, sphi2, d_phi1, d_phi2)

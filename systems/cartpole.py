@@ -12,19 +12,19 @@ class ActuatedCartpole(ActuatedSystem):
     d, m, r = 5, 1, 2
 
     M_values_train = np.array([1., 2.0])
-    ml_values_train = np.array([.2, .5])
+    m_values_train = np.array([.2, .5])
     # mll_values_train = np.array([1.5, 2.5])
     # mgl_values_train = np.array([10., 11.])
-    parameter_grid_train = np.meshgrid(M_values_train, ml_values_train)
+    parameter_grid_train = np.meshgrid(M_values_train, m_values_train)
     W_train = np.dstack(parameter_grid_train).reshape(-1, 2)
 
     training_task_n_trajectories = 1
 
     M_values_test = np.array([1.5, 2.5])
-    ml_values_test = np.array([.3, .6])
+    m_values_test = np.array([.3, .6])
     # mll_values_test = np.array([1.0, 2.0])
     # mgl_values_test = np.array([9., 12.])
-    parameter_grid_test = np.meshgrid(M_values_test, ml_values_test
+    parameter_grid_test = np.meshgrid(M_values_test, m_values_test
     
     )
     W_test = np.dstack(parameter_grid_test).reshape(-1, 2)
@@ -66,8 +66,8 @@ class ActuatedCartpole(ActuatedSystem):
         return v
 
     def define_environment(self, w):
-        M, ml = w
-        cartpole = Cartpole(ml, M-ml, 1., beta=self.beta, alpha = 0., dt=self.dt)
+        M, m = w
+        cartpole = Cartpole(m, M-m, 1., beta=self.beta, alpha = 0., dt=self.dt)
         return cartpole
 
     
@@ -107,31 +107,31 @@ class Upkie(DampedActuatedCartpole):
         super().__init__(dt, **kwargs)
 
     def generate_training_data(self):
-        with open(f'data/train/dataset.pkl', 'rb') as file:
+        with open(f'data/upkie/train/dataset.pkl', 'rb') as file:
             dataset = pickle.load(file)
         self.T = len(dataset)
         return dataset
     
     def generate_test_data(self):
-        with open(f'data/test/dataset.pkl', 'rb') as file:
+        with open(f'data/upkie/test/dataset.pkl', 'rb') as file:
             dataset = pickle.load(file)
         self.T_test = len(dataset)
         return dataset
     
-class WheelUpkie(DampedActuatedCartpole):
+# class WheelUpkie(DampedActuatedCartpole):
 
-    def __init__(self, dt=1/200, **kwargs) -> None:
-        super().__init__(dt, **kwargs)
+#     def __init__(self, dt=1/200, **kwargs) -> None:
+#         super().__init__(dt, **kwargs)
 
-    def generate_training_data(self):
-        with open(f'data/velocity/train/dataset.pkl', 'rb') as file:
-            dataset = pickle.load(file)
-        self.T = len(dataset)
-        return dataset
+#     def generate_training_data(self):
+#         with open(f'data/velocity/train/dataset.pkl', 'rb') as file:
+#             dataset = pickle.load(file)
+#         self.T = len(dataset)
+#         return dataset
     
-    def generate_test_data(self):
-        with open(f'data/velocity/test/dataset.pkl', 'rb') as file:
-            dataset = pickle.load(file)
-        self.T_test = len(dataset)
-        return dataset
+#     def generate_test_data(self):
+#         with open(f'data/velocity/test/dataset.pkl', 'rb') as file:
+#             dataset = pickle.load(file)
+#         self.T_test = len(dataset)
+#         return dataset
     
