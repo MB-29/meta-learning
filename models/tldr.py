@@ -20,8 +20,11 @@ class TaskLinearModel(nn.Module):
         assert x.ndim > 1
         V = self.V(x) 
         y = V @ self.w
-        y = y if self.c is None else y+self.c(x)
+        y = y if self.c is None else y+self.c(x).squeeze()
         return y
+    
+    def get_context(self):
+        return self.w
     
     def predict(self, x):
         return self.forward(x)
@@ -32,17 +35,17 @@ class TaskLinearModel(nn.Module):
 
 class TLDR(MetaModel):
 
-    def __init__(self, T_train, r, V, c=None, W=None, **kwargs) -> None:
+    def __init__(self, T_train, r, V, c=None, W=None, regularizer=0.0, **kwargs) -> None:
         super().__init__(T_train)
         self.V = V
         self.V_hat = None
         self.c = c
-        self.c_hat = None
+        self.regularizer = regularizer
         
         self.r = r
+        self.r_hat = None
         W = W if W is not None else torch.abs(torch.randn(self.T_train, self.r))
         self.W = nn.Parameter(W)
-
 
         self.kwargs = kwargs
         # self.define_task_models(W)
@@ -56,9 +59,9 @@ class TLDR(MetaModel):
         #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
         #     self.task_models.append(model)
         # return self.task_models
-    def forward(self, x):
-        y = self.V(x)@self.W[0]
-        return y
+    # def forward(self, x):
+    #     y = self.V(x)@self.W[0]
+    #     return y
 
     def parametrizer(self, task_index, dataset):
         w = self.W[task_index]
@@ -66,9 +69,11 @@ class TLDR(MetaModel):
         return model
         # W = W if W is not None else 
 
-    def estimate_transform(self, W_star, indices=None):
+    def estimate_context_transform(self, W_star, indices=None):
         calibration_size, _ = W_star.shape
-        W_regression = self.W[:calibration_size].detach().numpy()
+        W = self.W.detach().numpy()
+        W_regression = np.concatenate((W, np.ones((calibration_size, 1))), axis=1)
+        # print(f'W_regression = {W_regression}')
         estimator, residuals, rank, s = np.linalg.lstsq(
         W_regression, W_star, rcond=None) 
         # print(f'rank {rank}')
@@ -77,8 +82,8 @@ class TLDR(MetaModel):
 
     def calibrate(self, W_star):
     
-        self.estimator = self.estimate_transform(W_star)
-        self.W_hat = self.W.detach() @ torch.tensor(self.estimator, dtype=torch.float)
+        # self.estimator = self.estimate_transform(W_star)
+        # self.W_hat = self.W.detach() @ torch.tensor(self.estimator, dtype=torch.float)
         r_star = W_star.shape[1]
 
         # transform = np.linalg.pinv(self.estimator + 1e-7*np.eye(self.r, r_star))
@@ -90,8 +95,9 @@ class TLDR(MetaModel):
         layer.weight.data = tensor
         self.r_hat = r_star
         self.V_hat = nn.Sequential(self.V, layer)
-        self.c_hat = nn.Sequential(self.c, layer) if self.c is not None else None
-        return self.V_hat, self.W_hat
+        return transform
+        # self.c_hat = nn.Sequential(self.c, layer) if self.c is not None else None
+        # return self.V_hat, self.W_hat
     
     # def adapt_task_model(self, points, targets, n_steps=None):
     #     v_values = self.V_hat(points)
@@ -104,28 +110,46 @@ class TLDR(MetaModel):
     #     w = torch.tensor(w_hat, dtype=torch.float)
     #     model = TaskLinearModel(w, self.V_hat, self.c_hat)
     #     return model
-    def get_context(self, meta_dataset, n_steps):
-        self.context_values = self.W
-        return self.context_values
+    def get_context_values(self, meta_dataset, n_steps):
+        context_values = self.W
+        return context_values
     
     
     def adapt_task_model(self, data, **kwargs):
         points, targets = data
         V = self.V_hat if self.V_hat is not None else self.V
-        c = self.c_hat if self.c_hat is not None else self.c
+        c = self.c
+        r = self.r_hat if self.r_hat is not None else self.r
         v_values = V(points)
-        c_values = c(points).detach() if self.c is not None else torch.zeros_like(targets)
+        c_values = c(points).squeeze().detach() if self.c is not None else torch.zeros_like(targets)
+
+        if self.V_hat is not None:
+            print(f'adapting an interpretable model')
         
         X = v_values.detach() 
         Y = (targets - c_values).view(-1)
-        # print(X.shape)
+        # print(f'targets {targets.shape}')
+        # print(f'c_values {c_values.shape}')
+        # print(X.shape)    
         # print(Y.shape)
+        # print(f'X= {X}')
         
-        
-        w_hat, _, _, _ = np.linalg.lstsq(X, Y, rcond=None)
+        # w_hat, _, _, _ = np.linalg.lstsq(X, Y, rcond=None)
+        lambd = 1e-5
+        cov = X.T@Y
+        gram = X.T@X 
+        gram = X.T@X + lambd * len(data) * np.eye(r)
+        w_hat = np.linalg.solve(gram, cov)
         w = torch.tensor(w_hat, dtype=torch.float)
-        model = TaskLinearModel(w, self.V, self.c)
+        model = TaskLinearModel(w, V, self.c)
+        # print(f'adapted w = {w}')
         return model
+    
+    def regularization(self):
+        if self.regularizer == 0.0:
+            return 0.0
+        r_W = self.regularizer * torch.norm(self.W) / self.T_train
+        return r_W
     # def adapt_task_model(self, points, targets, n_steps, lr=0.01):
     #     # learner = self.net    
     #     w = torch.randn(self.r, requires_grad=True)

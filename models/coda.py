@@ -11,13 +11,18 @@ loss_function = nn.MSELoss()
 
 class TaskCoDA(nn.Module):
 
-    def __init__(self, net, weights):
+    def __init__(self, net, weights, xi):
         super().__init__()
         self.net = net
         self.weights = weights
+        self.xi = xi
 
     def forward(self, x):
         return self.net.forward(x, weights=self.weights)
+    
+    def get_context(self):
+        return self.xi
+
     
 
 class CoDA(MetaModel):
@@ -51,8 +56,9 @@ class CoDA(MetaModel):
         
     
     def parametrizer(self, task_index, dataset):
-        task_weights = self.hnet.forward(uncond_input=self.Xi[:, :, task_index])
-        task_model = TaskCoDA(self.mnet, task_weights)
+        xi = self.Xi[:, :, task_index]
+        task_weights = self.hnet.forward(uncond_input=xi)
+        task_model = TaskCoDA(self.mnet, task_weights, xi=xi.clone())
         return task_model
     
     def adapt_task_model(self, dataset, n_steps, lr=0.05, plot=False):
@@ -85,7 +91,7 @@ class CoDA(MetaModel):
             plt.figure()
             plt.plot(train_error_values) ; plt.yscale('log') ; plt.show()
         # plt.pause(0.1)  ; plt.close()
-        model = TaskCoDA(self.mnet, task_weights)
+        model = TaskCoDA(self.mnet, task_weights, xi.data)
         return model
     
     def regularization(self):
@@ -93,8 +99,8 @@ class CoDA(MetaModel):
         W = list(self.hnet.parameters())[0]
         r_W = 1e-2*torch.norm(W, p=2, dim=1).sum()
         return r_xi + r_W
-    def get_context(self, dataset, n_steps):
-        self.context_values = self.Xi.squeeze().T
+    def get_context_values(self, dataset, n_steps):
+        self.context_values = self.Xi.squeeze().T.detach()
         return self.context_values
     # def save(self, path):
     #     information = {'state_dict': self.hnet.state_dict()}

@@ -4,7 +4,7 @@ import torch
 from matplotlib import rc
 
 from systems import Quadrupole
-from quadrupole import metamodel_choice
+from scripts.quadrupole import metamodel_choice
 
 rc('font', size=15)
 rc('text', usetex=True)

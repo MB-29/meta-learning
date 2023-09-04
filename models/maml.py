@@ -48,7 +48,7 @@ class MAML(MetaModel):
         learner = self.gradient_steps(points, targets, n_steps)
         return learner
 
-    def get_context(self, dataset, n_steps):
+    def get_context_values(self, dataset, n_steps):
         T = len(dataset)
         context_values = torch.zeros(T, 2)
         for task_index in range(T):
@@ -67,6 +67,9 @@ class BodyHead(nn.Module):
     def forward(self, x):
         feature = self.body(x)
         return self.head(feature)
+    
+    def get_context(self):
+        return self.head.weight.data
 
 class ANIL(MAML):
     def __init__(self, T_train, body, head, lr, **kwargs) -> None:
@@ -93,7 +96,7 @@ class ANIL(MAML):
         head = self.gradient_steps(features, targets, n_steps, plot=plot)
         return BodyHead(self.body, head)
     
-    def get_context(self, dataset, n_steps):
+    def get_context_values(self, dataset, n_steps):
         T = len(dataset)
         context_values = torch.zeros(T, self.r)
         for task_index in range(T):
