@@ -8,7 +8,7 @@ import torch
 from systems import DampedActuatedCartpole
 from scripts.train.damped_cartpole import metamodel_choice
 from scripts.plot.layout import color_choice
-from controller import Controller, adaptive_control
+from controller import Controller, adaptive_control, actuate
 
 np.random.seed(5)
 torch.manual_seed(5)
@@ -31,7 +31,7 @@ x0 = np.array([0, 0, np.pi, 0])
 # u_target_values = np.zeros((T, 1))
 u_target_values = u.reshape(-1, 1)
 # u_target_values[100:] = 1.08
-x_target_values = robot.actuate(u_target_values, x0=x0)
+x_target_values = actuate(robot, u_target_values, x0=x0)
 points = system.extract_points(x_target_values)
 
 plot = {'u_target_values': u_target_values, 'x_target_values': x_target_values}
@@ -79,7 +79,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml']):
     state_values, u_values = adaptive_control(robot, controller, T, x0=x0)
     # u_ff_values = controller.adapted_model(points).detach().numpy().reshape(-1, 1)
 
-    # x_values, u_values = robot.control_loop(u_values, x_target_values, x0=x0, plot=plot)
+    # x_values, u_values = control_loop(robot, u_values, x_target_values, x0=x0, plot=plot)
 
     color = color_choice[metamodel_name]
 
@@ -99,7 +99,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml']):
 
 dynamics_model = robot.inverse_dynamics
 u_values = robot.plan_inverse_dynamics(x_target_values)
-state_values, u_values = robot.control_loop(u_values, x_target_values, x0=x0, plot=plot)
+state_values, u_values = control_loop(robot, u_values, x_target_values, x0=x0, plot=plot)
 plt.subplot(2, 1, 1)
 plt.plot(u_values.squeeze(), lw=2.5, color='indigo', alpha=.8)
 plt.subplot(2, 1, 2)

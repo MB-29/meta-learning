@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from controller import actuate
+
 
 class System(nn.Module):
 
@@ -86,7 +88,7 @@ class ActuatedSystem(System):
         task_targets = torch.zeros((self.Nt*self.n_trajectories))
         for trajectory_index in range(self.n_trajectories): 
             U = self.U_values[trajectory_index]
-            state_values = environment.actuate(U, x0=self.x0_values[trajectory_index], plot=False)
+            state_values = actuate(environment, U, x0=self.x0_values[trajectory_index], plot=False)
             task_targets[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = torch.tensor(U).float().squeeze()
             task_points[trajectory_index*self.Nt:(trajectory_index+1)*self.Nt] = self.extract_points(state_values) 
         task_dataset = (task_points, task_targets) 

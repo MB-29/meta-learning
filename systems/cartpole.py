@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from systems.system import ActuatedSystem
 from robotics.cartpole import Cartpole
-
+from controller import actuate
     
 class ActuatedCartpole(ActuatedSystem):
 
@@ -126,7 +126,7 @@ class Upkie(DampedActuatedCartpole):
         w = np.array([total_mass, mass])
         cartpole = self.define_environment(w)
         x0 = np.array([0, 0, np.pi, 0])
-        state_values = cartpole.actuate(u_values, x0=x0, plot=False)
+        state_values = actuate(cartpole, u_values, x0=x0, plot=False)
         task_targets = torch.tensor(u_values).float().squeeze()
         task_points = self.extract_points(state_values)
 

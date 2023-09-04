@@ -13,7 +13,7 @@ from interpret import estimate_context_transform
 # np.random.seed(5)
 # torch.manual_seed(5)
 
-data_path = 'data/capacitor/epsilon_1'
+data_path = 'data/capacitor/epsilon_01'
 system = Capacitor(data_path)
 meta_dataset = system.generate_training_data()
 test_dataset = system.generate_test_data()
@@ -53,7 +53,7 @@ for model_index, name in enumerate(model_names):
     architecture = name.split('_')[0]
     metamodel = metamodel_choice[architecture]
     print(f'model {name}')
-    path = f'output/models/capacitor/epsilon_1/{name}.ckpt'
+    path = f'output/models/capacitor/epsilon_01/{name}.ckpt'
     checkpoint = torch.load(path)
     metamodel.load_state_dict(checkpoint)
     context_error_values = []

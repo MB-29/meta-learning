@@ -8,7 +8,7 @@ import torch
 from systems import ActuatedArm
 from scripts.train.arm import metamodel_choice
 from scripts.plot.layout import color_choice
-
+from controller import control_loop, actuate
 # np.random.seed(5)
 # torch.manual_seed(5)
 
@@ -58,7 +58,7 @@ def law(t):
 #     return magnitude*np.sin(2*np.pi*t/(period))
 t_values = dt*np.arange(T)
 u_target_values = law(t_values).reshape(-1, 1)
-x_target_values = robot.actuate(u_target_values, plot=plot)
+x_target_values = actuate(robot, u_target_values, plot=plot)
 points = system.extract_points(x_target_values)
 
 plot = None
@@ -101,7 +101,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil']):
     # plt.plot(u_ff_values.squeeze(), label=metamodel_name, color=color, lw=2.5, alpha=.9)
     # plt.show()
 
-    x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
+    x_values, u_values = control_loop(robot, u_ff_values, x_target_values, plot=plot)
 
 
     # plt.subplot(2, 1, 2)
@@ -118,7 +118,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil']):
 
 dynamics_model = robot.inverse_dynamics
 u_ff_values = robot.plan_inverse_dynamics(x_target_values)
-x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
+x_values, u_values = control_loop(robot, u_ff_values, x_target_values, plot=plot)
 # plt.subplot(2, 1, 1)
 # plt.plot(u_ff_values.squeeze(), color='purple', lw=2.5, alpha=.7)
 # plt.plot(u_target_values.squeeze(), ls='--', lw=2.5, color='black')

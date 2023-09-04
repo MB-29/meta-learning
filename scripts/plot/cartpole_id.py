@@ -9,6 +9,7 @@ from systems import DampedActuatedCartpole
 from scripts.train.damped_cartpole import metamodel_choice
 from scripts.plot.layout import color_choice
 from interpret import estimate_context_transform
+from controller import actuate
 
 np.random.seed(5)
 torch.manual_seed(5)
@@ -56,7 +57,7 @@ def law(t):
 #     return magnitude*np.sin(2*np.pi*t/(period))
 t_values = dt*np.arange(T)
 u_target_values = law(t_values).reshape(-1, 1)
-x_target_values = robot.actuate(u_target_values)
+x_target_values = actuate(robot, u_target_values)
 points = system.extract_points(x_target_values)
 
 plot = {'u_target_values': u_target_values, 'x_target_values': x_target_values}

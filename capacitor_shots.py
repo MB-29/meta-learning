@@ -15,7 +15,7 @@ rc('text.latex', preamble=[r'\usepackage{amsmath}', r'\usepackage{amsfonts}'])
 # np.random.seed(5)
 # torch.manual_seed(5)
 
-data_path = 'data/capacitor/epsilon_1'
+data_path = 'data/capacitor/epsilon_01'
 system = Capacitor(data_path)
 meta_dataset = system.generate_training_data()
 test_dataset = system.generate_test_data()
@@ -44,6 +44,7 @@ model_names = ['tldr_6000', 'coda_3000']
 model_names = ['tldr_10000', 'coda_10000']
 model_names = ['tldr', 'coda', 'anil']
 model_names = ['tldr_4000', 'coda_4000', 'anil']
+model_names = ['tldr', 'coda', 'anil_10000']
 
 # model_names = ['tldr', 'anil', 'coda']
 n_gradient = 2_000
@@ -57,7 +58,7 @@ for model_index, name in enumerate(model_names):
     architecture = name.split('_')[0]
     metamodel = metamodel_choice[architecture]
     print(f'model {name}')
-    path = f'output/models/capacitor/epsilon_1/{name}.ckpt'
+    path = f'output/models/capacitor/epsilon_01/{name}.ckpt'
     checkpoint = torch.load(path)
     metamodel.load_state_dict(checkpoint)
     adaptation_error_values = []
