@@ -43,7 +43,7 @@ model_names = ['tldr_10000', 'coda_3000']
 model_names = ['tldr_6000', 'coda_3000']
 model_names = ['tldr_10000', 'coda_10000']
 model_names = ['tldr', 'coda', 'anil']
-model_names = ['tldr', 'coda']
+model_names = ['tldr_4000', 'coda_4000', 'anil']
 
 # model_names = ['tldr', 'anil', 'coda']
 n_gradient = 2_000

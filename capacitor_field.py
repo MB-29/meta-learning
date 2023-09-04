@@ -34,7 +34,7 @@ model_names = ['tldr_1500', 'tldr_3000']
 # model_names = ['tldr', 'anil']
 # model_names = ['tldr', 'coda', 'anil']
 model_names = ['tldr_6000', 'coda_3000']
-model_names = ['tldr_10000', 'coda_10000']
+model_names = ['tldr_10000', 'coda_10000', 'anil']
 
 # test_dataset = test_dataset[3:]
 # test_dataset = meta_dataset[-2:]
@@ -47,7 +47,7 @@ for task_index in range(len(test_dataset)):
     adaptation_indices = np.random.choice(indices, size=n_shots)
     adaptation_indices = np.random.choice(len(system.grid), size=n_shots)
     # adaptation_indices = 100+np.arange(7)*9_000
-    adaptation_indices = np.concatenate([20 + k*50 +np.arange(7)*9_000 for k in range(6)])[::]
+    adaptation_indices = np.concatenate([20 + k*50 +np.arange(7)*9_000 for k in range(6)])[::2]
     # adaptation_indices = np.arange(300, len(system.grid), 1000)
     adaptation_points = system.grid[adaptation_indices]
 

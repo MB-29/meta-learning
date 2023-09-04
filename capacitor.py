@@ -12,7 +12,7 @@ from meta_training import meta_train, test_model
 
 sigma = 0
 # sigma = 5e-3
-data_path = 'data/capacitor/epsilon_05'
+data_path = 'data/capacitor/epsilon_01'
 system = Capacitor(data_path, sigma=sigma)
 d, r = system.d, 3
 
@@ -80,8 +80,8 @@ metamodel_choice = {
 }
 
 metamodel_name = 'maml'
-metamodel_name = 'tldr'
 metamodel_name = 'coda'
+metamodel_name = 'tldr'
 metamodel_name = 'anil'
 metamodel = metamodel_choice[metamodel_name]
 
@@ -100,13 +100,13 @@ if __name__ == '__main__':
             }
         }
     n_gradient = 30_000
-    n_gradient = 1_000
+    n_gradient = 10_000
     # n_gradient = 10_000
     batch_size = 500
     loss_values, test_values = meta_train(
         metamodel,
         meta_dataset,
-        lr=0.005,
+        lr=0.002,
         n_gradient=n_gradient,
         test=test,
         batch_size=batch_size
