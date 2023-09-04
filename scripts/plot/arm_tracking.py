@@ -32,19 +32,20 @@ sigma = 1e-4
 gamma = 5
 I2, m2 = 0.38, 1.2  
 shots = 30
-T = 400
+T = 140
 
-gamma = 8
-I2, m2 = 1., 3.0
-T = 200
-shots = 70
+# gamma = 8
+# I2, m2 = 1., 3.0
+# T = 200
+
+shots = 60
 robot = Arm(I2, m2, system.alpha, sigma=sigma)
 dt = robot.dt
 
 plot = False
 # plot = True
 # d = robot.d
-def law(t):
+def law(t): 
     # magnitude = gamma/2 + (t/(T*dt))*gamma/2
     magnitude = lambda u: gamma * np.tanh((2+t/(T*dt))*u)
     # period = dt*(100 - 20*np.exp(-(t-dt*T/2)**2))
@@ -69,13 +70,13 @@ n_gradient = 60_000
 n_gradient = 45_000
 n_gradient = 35_000
 # n_gradient = 200_000
-fig = plt.figure(figsize=(4, 4))
+fig = plt.figure(figsize=(4, 3))
 fig.set_tight_layout(True)
 
 # for model_index, metamodel_name in enumerate(['tldr']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil']):
 # for model_index, metamodel_name in enumerate(['tldr', 'maml']):
-for model_index, metamodel_name in enumerate(['tldr', 'anil', 'coda']):
+for model_index, metamodel_name in enumerate(['tldr', 'anil']):
 
     metamodel = metamodel_choice[metamodel_name]
     path = f'output/models/arm/{metamodel_name}_{n_gradient}.ckpt'
@@ -96,14 +97,14 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil', 'coda']):
     u_ff_values = adapted_model(points).detach().numpy().reshape(-1, 1)
     # model = robot.inverse_dynamics
 # for model_name, model in models.items():
-    plt.subplot(2, 1, 1)
-    plt.plot(u_ff_values.squeeze(), label=metamodel_name, color=color, lw=2.5, alpha=.9)
+    # plt.subplot(2, 1, 1)
+    # plt.plot(u_ff_values.squeeze(), label=metamodel_name, color=color, lw=2.5, alpha=.9)
     # plt.show()
 
     x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
 
 
-    plt.subplot(2, 1, 2)
+    # plt.subplot(2, 1, 2)
     # tip_height = x_values[:, 0] + l*np.sin(x_values[:, 2])
     tip_abscissa, tip_ordinate = robot.compute_tip_positions(x_values).T
     plt.plot(tip_ordinate, label=metamodel_name, color=color, lw=2.5, alpha=.8)
@@ -116,15 +117,17 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil', 'coda']):
 
 
 dynamics_model = robot.inverse_dynamics
-u_ff_values = robot.plan_inverse_dynamics(dynamics_model, x_target_values)
+u_ff_values = robot.plan_inverse_dynamics(x_target_values)
 x_values, u_values = robot.control_loop(u_ff_values, x_target_values, plot=plot)
-plt.subplot(2, 1, 1)
-plt.plot(u_ff_values.squeeze(), color='purple', lw=2.5, alpha=.7)
-plt.plot(u_target_values.squeeze(), ls='--', lw=2.5, color='black')
+# plt.subplot(2, 1, 1)
+# plt.plot(u_ff_values.squeeze(), color='purple', lw=2.5, alpha=.7)
+# plt.plot(u_target_values.squeeze(), ls='--', lw=2.5, color='black')
 # plt.ylabel(r'input')
-plt.xticks([])
-plt.ylim((-1.5*gamma, 1.5*gamma))
-plt.subplot(2, 1, 2)
+# plt.xticks([])
+# plt.ylim((-2.1, -0.))
+plt.yticks([])
+# plt.ylim((-1.5*gamma, 1.5*gamma))
+# plt.subplot(2, 1, 2)
 # plt.ylabel(r'tip height')
 plt.xlabel(r'time')
 tip_abscissa, tip_ordinate = robot.compute_tip_positions(x_values).T

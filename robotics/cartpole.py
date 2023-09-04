@@ -15,7 +15,7 @@ class Cartpole(Robot):
 
     K = np.array([[1., 1.]])
 
-    goal_state = torch.tensor([3., 0., -1., 0., 0.])
+    goal_state = torch.tensor([1., 0., -1., 0., 0.])
     goal_weights = torch.tensor([1., 1., 1., 1., 1.])
 
     # @staticmethod
@@ -125,6 +125,12 @@ class Cartpole(Robot):
 
         return error_values
 
+    def set_dynamic_parameters(self, parameters):
+        mass, Mass = parameters
+        self.mass = mass
+        self.Mass = Mass
+    def get_dynamic_parameters(self):
+        return self.Mass, self.mass
 
     def plot_system(self, x, u, t, **kwargs):
         y, d_y, phi, d_phi = x[0], x[1], x[2], x[3]
@@ -134,6 +140,21 @@ class Cartpole(Robot):
         if push != 0:
             plt.arrow(y+side*self.l/2, 0, push, 0, color='red', head_width=0.1,**kwargs)
         plt.plot([y-self.l/2, y+self.l/2], [0, 0], color='black', **kwargs)
+        plt.plot([y, y+self.l*s_phi], [0, -self.l*cphi], color='blue', **kwargs)
+        plt.xlim((y-2*self.l, y+2*self.l))
+        plt.ylim((-2*self.l, 2*self.l))
+        # plt.ylim((-2, 2))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.title(f't = {t}')
+    def plot_linearized(self, obs, u, t, **kwargs):
+        y, d_y, pitch, pitch_dot = obs
+        phi = np.pi - pitch
+        push = self.l*0.06*u[0]
+        side = np.sign(push)
+        cphi, s_phi = np.cos(phi), np.sin(phi)
+        if push != 0:
+            plt.arrow(y+side*self.l/2, 0, push, 0, color='red', head_width=0.1,**kwargs)
+        plt.plot([y-self.l/2, y+self.l/2], [0, 0], lw=self.Mass, color='black', **kwargs)
         plt.plot([y, y+self.l*s_phi], [0, -self.l*cphi], color='blue', **kwargs)
         plt.xlim((y-2*self.l, y+2*self.l))
         plt.ylim((-2*self.l, 2*self.l))

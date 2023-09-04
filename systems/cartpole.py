@@ -118,6 +118,22 @@ class Upkie(DampedActuatedCartpole):
         self.T_test = len(dataset)
         return dataset
     
+    def generate_cartpole_test_data(self):
+        # with open('output/u.pkl', 'rb') as file:
+        with open('output.pkl', 'rb') as file:
+            u_values = pickle.load(file).reshape(-1, 1)
+        total_mass, mass = 1.5, .5
+        w = np.array([total_mass, mass])
+        cartpole = self.define_environment(w)
+        x0 = np.array([0, 0, np.pi, 0])
+        state_values = cartpole.actuate(u_values, x0=x0, plot=False)
+        task_targets = torch.tensor(u_values).float().squeeze()
+        task_points = self.extract_points(state_values)
+
+        return [(task_points, task_targets)]
+
+
+    
 # class WheelUpkie(DampedActuatedCartpole):
 
 #     def __init__(self, dt=1/200, **kwargs) -> None:

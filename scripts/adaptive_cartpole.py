@@ -23,7 +23,7 @@ l = 1
 robot = Cartpole(mass, Mass, l, alpha, beta)
 
 
-with open('u.pkl', 'rb') as file:
+with open('output/u.pkl', 'rb') as file:
     u = pickle.load(file)
 # d = robot.d
 T = 100
@@ -98,7 +98,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'maml']):
     # plt.plot(error_values, label=metamodel_name, color=color)
 
 dynamics_model = robot.inverse_dynamics
-u_values = robot.plan_inverse_dynamics(dynamics_model, x_target_values)
+u_values = robot.plan_inverse_dynamics(x_target_values)
 state_values, u_values = robot.control_loop(u_values, x_target_values, x0=x0, plot=plot)
 plt.subplot(2, 1, 1)
 plt.plot(u_values.squeeze(), lw=2.5, color='indigo', alpha=.8)
