@@ -36,6 +36,7 @@ Mass, mass = 1.4, .7
 Mass, mass = 3.4, 1.2
 Mass, mass = 1.7, .4
 Mass, mass = 1., .2
+Mass, mass = 3., 1.
 
 # Mass, mass = .9, .2
 l = 1
@@ -68,10 +69,10 @@ n_gradient = 50_000
 max_shots = 100
 fig = plt.figure(figsize=(4.2, 3))
 fig.set_tight_layout(True)
-# for model_index, metamodel_name in enumerate(['tldr']):
 shot_values = np.arange(0, max_shots)  
+for model_index, metamodel_name in enumerate(['tldr']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil', 'coda']):
-for model_index, metamodel_name in enumerate(['tldr', 'anil']):
+# for model_index, metamodel_name in enumerate(['tldr', 'anil']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil', 'maml', 'coda']):
 
     metamodel = metamodel_choice[metamodel_name]

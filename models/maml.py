@@ -17,6 +17,9 @@ class MAML(MetaModel):
         self.lr = lr
         self.n_inner = n_inner
         self.inner_learner = l2la.MAML(net, lr, first_order=False)
+
+
+
         
     def forward(self, x):
         return self.inner_learner(x)
@@ -36,7 +39,7 @@ class MAML(MetaModel):
             train_error = loss_function(inner_learner(points).squeeze(), targets.squeeze())
             # print(f'adapt, step{adaptation_step}')
             inner_learner.adapt(train_error)
-            train_error_values.append(train_error.item())
+            # train_error_values.append(train_error.item())
         # plt.plot
         if plot:
             plt.plot(train_error_values)
@@ -49,8 +52,10 @@ class MAML(MetaModel):
         return learner
 
     def get_context_values(self, dataset, n_steps):
+        r = self.inner_learner.module[-1].in_features
+
         T = len(dataset)
-        context_values = torch.zeros(T, 2)
+        context_values = torch.zeros(T, r)
         for task_index in range(T):
             data = dataset[task_index]
             task_model = self.adapt_task_model(data, n_steps)

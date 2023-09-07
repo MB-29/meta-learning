@@ -54,6 +54,9 @@ class Robot:
         x0 = self.x0 if x0 is None else x0
         self.x = x0.copy()
 
+    def observe_state(self):
+        noise = self.sigma*np.random.randn(*self.x.shape)
+        return self.x.copy() + noise
     
     def d_dynamics(self, z):
         raise NotImplementedError

@@ -14,6 +14,7 @@ class Cartpole(Robot):
     d, m = 4, 1
 
     K = np.array([[1., 1.]])
+    K = np.array([[.5, .5]])
 
     goal_state = torch.tensor([1., 0., -1., 0., 0.])
     goal_weights = torch.tensor([1., 1., 1., 1., 1.])

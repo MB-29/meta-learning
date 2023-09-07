@@ -14,8 +14,8 @@ from controller import control_loop, actuate
 
 system = ActuatedArm()
 
-sigma = 0
 sigma = 1e-4
+# sigma = 0
 
 # m2, l1, l2 = 3., 4.95, 1.11
 # I2, mll, ml = system.W_test[-2]
@@ -31,15 +31,15 @@ sigma = 1e-4
 
 gamma = 5
 I2, m2 = 0.38, 1.2  
-shots = 30
+shots = 20
 T = 140
 
 # gamma = 8
 # I2, m2 = 1., 3.0
+# shots = 20
 # T = 200
 
-shots = 60
-robot = Arm(I2, m2, system.alpha, sigma=sigma)
+robot = Arm(I2, m2, system.alpha)
 dt = robot.dt
 
 plot = False
@@ -125,7 +125,7 @@ x_values, u_values = control_loop(robot, u_ff_values, x_target_values, plot=plot
 # plt.ylabel(r'input')
 # plt.xticks([])
 # plt.ylim((-2.1, -0.))
-plt.yticks([])
+# plt.yticks([])
 # plt.ylim((-1.5*gamma, 1.5*gamma))
 # plt.subplot(2, 1, 2)
 # plt.ylabel(r'tip height')

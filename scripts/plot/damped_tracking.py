@@ -26,7 +26,7 @@ Mass, mass = 1.9, .5
 Mass, mass = 1., .2
 # Mass, mass = .9, .2
 l = 1
-robot = Cartpole(mass, Mass, l, alpha, beta)
+robot = Cartpole(mass, Mass, l, alpha, beta, sigma=sigma)
 
 
 # d = robot.d
@@ -44,7 +44,7 @@ def law(t):
 #     return magnitude*np.sin(2*np.pi*t/(period))
 t_values = dt*np.arange(T)
 u_target_values = law(t_values).reshape(-1, 1)
-x_target_values = actuate(robot, u_target_values, noise_size=sigma)
+x_target_values = actuate(robot, u_target_values)
 points = system.extract_points(x_target_values)
 
 plot = {'u_target_values': u_target_values, 'x_target_values': x_target_values}
