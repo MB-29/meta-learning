@@ -11,8 +11,8 @@ from scripts.plot.layout import color_choice
 from controller import Controller, adaptive_control, actuate, control_loop
 from interpret import estimate_context_transform
 
-np.random.seed(5)
-torch.manual_seed(5)
+# np.random.seed(5)
+# torch.manual_seed(5)
 
 system = DampedActuatedCartpole()
 mass_values = np.array(
@@ -25,7 +25,7 @@ meta_dataset = system.generate_training_data()
 
 n_obs = 1_000
 sigma, alpha, beta = 0, 0., 0.1
-gamma = 2
+gamma = 6
 Mass, mass = 1.9, .6
 l = 1
 robot = Cartpole(mass, Mass, l, alpha=alpha, beta=beta)
@@ -57,8 +57,8 @@ plot = None
 
 
 n_gradient = 50_000
-shots = 50
-min_shots = 5
+shots = 200
+min_shots = 50
 fig = plt.figure(figsize=(8, 6))
 fig.set_tight_layout(True)
 

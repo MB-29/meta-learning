@@ -25,24 +25,23 @@ T_test = len(test_dataset)
 #     nn.Linear(16, r),
 # )
 V_net = torch.nn.Sequential(
-    nn.Linear(d, 64),
+    nn.Linear(d, 16),
     nn.Tanh(),
-    nn.Linear(64, 64),
+    nn.Linear(16, 16),
     nn.Tanh(),
-    nn.Linear(64, 64),
-    nn.Tanh(),
-    # nn.Linear(64, 64),
+    # nn.Linear(16, 16),
     # nn.Tanh(),
-    nn.Linear(64, r),
+    # nn.Linear(16, 16),
+    nn.Linear(16, r),
 )
 c_net = torch.nn.Sequential(
-    nn.Linear(d, 32),
+    nn.Linear(d, 16),
     nn.Tanh(),
-    nn.Linear(32, 32),
+    nn.Linear(16, 16),
     nn.Tanh(),
-    nn.Linear(32, 1),
+    nn.Linear(16, 1),
 )
-tldr = TLDR(T_train, r, V_net, c=None)
+tldr = TLDR(T_train, r, V_net, c=c_net)
 
 net = torch.nn.Sequential(
     nn.Linear(d, 64),
@@ -81,10 +80,10 @@ if __name__ == '__main__':
     # np.random.seed(5)
     # torch.manual_seed(5)
     shots = 100
-    adaptation_indices = np.arange(shots)
+    adaptation_indices = np.arange(30, 30+shots)
     test = {
         'function': test_model,
-        'args':{
+        'args':{   
             'test_dataset': test_dataset,
             'adaptation_indices': adaptation_indices,
             'n_steps': 100,
@@ -96,7 +95,7 @@ if __name__ == '__main__':
     loss_values, test_values = meta_train(
         metamodel,
         meta_dataset,
-        lr=0.002,
+        lr=0.05,
         n_gradient=n_gradient,
         test=test,
         batch_size=batch_size
