@@ -51,6 +51,16 @@ class Dipole(StaticSystem):
         grid_x2.reshape(-1, 1),
     ], 1)
 
+    n_points = 20
+    x1_values_test = torch.linspace(-1.1, 1.1, n_points)
+    x2_values_test = torch.linspace(0.2, 1.1, n_points)
+    grid_x1_test, grid_x2_test = torch.meshgrid(
+        x1_values_test, x2_values_test, indexing='ij')
+    grid_test = torch.cat([
+        grid_x1_test.reshape(-1, 1),
+        grid_x2_test.reshape(-1, 1),
+    ], 1)
+
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -119,8 +129,8 @@ class Dipole(StaticSystem):
             self.grid_x2.numpy().T,
             vector_x.T,
             vector_y.T,
-            # color='black',
+            color='black',
             linewidth=linewidth*5,
             arrowsize=.8,
-            density=.5,
+            density=.35,
             **kwargs)

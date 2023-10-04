@@ -7,5 +7,5 @@ rc('text.latex', preamble=[r'\usepackage{amsmath}', r'\usepackage{amsfonts}'])
 
 
 
-color_choice = {'maml': 'blue', 'tldr': 'red', 'coda': 'green', 'anil': 'blue'}
-title_choice = {'maml': r'MAML', 'tldr': r'TLDR', 'anil': 'ANIL', 'coda': 'CoDA'}
+color_choice = {'maml': 'cyan', 'tldr': 'red', 'coda': 'indigo', 'anil': 'blue', 'analytic':'slategrey'}
+title_choice = {'maml': r'MAML', 'tldr': r'CAMEL', 'anil': 'ANIL', 'coda': 'CoDA'}

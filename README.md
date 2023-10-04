@@ -1,11 +1,11 @@
-# Task-Linear Deep Representation
+# Context-Affine Multi-Environment Learning
 
 We introduce a meta-learning architecture that aims to learn physical systems from multi-environment data in an interpretable way.
 
 ## Example
 
 ```python
-from models import TaskLinearMetaModel
+from models import CAMEL
 
 V_net = torch.nn.Sequential(
     nn.Linear(2, 16),
@@ -14,7 +14,7 @@ V_net = torch.nn.Sequential(
     nn.Tanh(),
     nn.Linear(16, r)
 )
-tldr = TaskLinearMetaModel(T_train, r, V_net, c=None)
+tldr = CAMEL(T_train, r, V_net, c=None)
 n_gradient = 10000
 optimizer = torch.optim.Adam(metamodel.parameters(), lr=0.005)
 loss_function = nn.MSELoss()

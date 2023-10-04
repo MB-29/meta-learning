@@ -50,14 +50,19 @@ class Capacitor(StaticSystem):
         plt.pcolormesh(self.grid_x1,
                        self.grid_x2,
                        potential.reshape((200, 300)),
-                       cmap='gray'
+                       cmap='gray',
+                       rasterized=True
                        )
+        # plt.xlim((-2.5, 2.5))
     def plot_potential_values(self, potential_values):
         plt.pcolormesh(self.grid_x1,
                        self.grid_x2,
                        potential_values.reshape((200, 300)),
-                       cmap='gray'
+                       cmap='gray',
+                       rasterized=True
                        )
+        # plt.xlim((-2.5, 2.5))
+        
         
     def plot_field(self, potential_map, **kwargs):
         field_map = derive_field(potential_map)

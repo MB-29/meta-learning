@@ -5,14 +5,14 @@ from hypnettorch.mnets import MLP
 import matplotlib.pyplot as plt
 
 from systems import Capacitor
-from models import TLDR, ANIL, MAML, CoDA
+from models import CAMEL, ANIL, MAML, CoDA
 from meta_training import meta_train, test_model
 
 
 
 sigma = 0
 # sigma = 5e-3
-data_path = 'data/capacitor/epsilon_01'
+data_path = 'data/capacitor/epsilon_02'
 system = Capacitor(data_path, sigma=sigma)
 d, r = system.d, 3
 
@@ -47,9 +47,9 @@ c_net = torch.nn.Sequential(
     nn.Linear(32, 1)
 )
 
-regularizer = 1e-3
+regularizer = 1e-2
 
-tldr = TLDR(T_train, r, V_net, c=c_net, W=torch.zeros(T_train, r), regularizer=regularizer)
+tldr = CAMEL(T_train, r, V_net, c=c_net, W=torch.zeros(T_train, r), regularizer=regularizer)
 
 net = torch.nn.Sequential(
     nn.Linear(d, 64),
@@ -67,7 +67,7 @@ head = torch.nn.Linear(r, 1)
 
 # T_train = 1
 maml = MAML(T_train, net, lr=0.05)
-anil = ANIL(T_train, V_net, head, lr=0.05)
+anil = ANIL(T_train, V_net, head, lr=0.01)
 mnet = MLP(n_in=d, n_out=1, hidden_layers=[64, 64, 64, r], activation_fn=nn.Tanh())
 coda = CoDA(T_train, r, mnet)
 
@@ -78,11 +78,11 @@ metamodel_choice = {
     'anil': anil,
     'tldr': tldr,
 }
-
+#
 metamodel_name = 'maml'
 metamodel_name = 'coda'
-metamodel_name = 'tldr'
 metamodel_name = 'anil'
+metamodel_name = 'tldr'
 metamodel = metamodel_choice[metamodel_name]
 
 if __name__ == '__main__':
@@ -99,14 +99,15 @@ if __name__ == '__main__':
             'n_steps': 20,
             }
         }
+    test = None
     n_gradient = 30_000
+    # n_gradient = 3_000
     n_gradient = 10_000
-    # n_gradient = 10_000
-    batch_size = 500
+    batch_size = 100
     loss_values, test_values = meta_train(
         metamodel,
-        meta_dataset,
-        lr=0.002,
+        meta_dataset,   
+        lr=0.02,
         n_gradient=n_gradient,
         test=test,
         batch_size=batch_size

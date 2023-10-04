@@ -32,6 +32,7 @@ class ActuatedArm(ActuatedSystem):
     Nt = 200
     t_values = dt*np.arange(Nt)
     gamma = 5
+    gamma = 1
     n_trajectories = 5
     U_values = np.zeros((n_trajectories, Nt, 1))
     x0_values = np.zeros((n_trajectories, 4))

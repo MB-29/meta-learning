@@ -94,10 +94,14 @@ class CoDA(MetaModel):
         model = TaskCoDA(self.mnet, task_weights, xi.data)
         return model
     
+    def create_task_model(self, w):
+        task_weights = self.hnet.forward(uncond_input=w.unsqueeze(0))
+        return TaskCoDA(self.mnet, task_weights, w.data)
+    
     def regularization(self):
         r_xi = 1e-5*(torch.norm(self.Xi, p=1, dim=1)**2).sum()
         W = list(self.hnet.parameters())[0]
-        r_W = 1e-2*torch.norm(W, p=2, dim=1).sum()
+        r_W = 1e-4*torch.norm(W, p=2, dim=1).sum()
         return r_xi + r_W
     def get_context_values(self, dataset, n_steps):
         self.context_values = self.Xi.squeeze().T.detach()

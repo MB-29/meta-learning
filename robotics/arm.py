@@ -32,6 +32,7 @@ class Arm(Robot):
     g = 9.8
 
     K = np.array([[.5, .5]])
+    K = np.array([[1, 1]])
 
 
     # @staticmethod
@@ -70,7 +71,7 @@ class Arm(Robot):
 
 
         self.phi_max = np.inf
-        self.dphi_max = 10.0
+        self.dphi_max = 30.0
         self.x_min = np.array([-self.phi_max, -self.dphi_max, -self.phi_max, -self.dphi_max])
         self.x_max = np.array([+self.phi_max, +self.dphi_max, +self.phi_max, +self.dphi_max])
 
@@ -94,11 +95,15 @@ class Arm(Robot):
         # Bu = np.array([0, u.squeeze()]) - self.alpha * np.array([d_phi1**2, 0])
         Bu = np.array([0, u.squeeze()]) - self.alpha * d_phi
 
+        # print(f'd_phi = {d_phi}')
+        # print(f'C = {C}')
         dd_phi1, dd_phi2 = np.linalg.solve(M, tau + Bu - C@d_phi)
         # print(f'dd_phi1 {dd_phi1}')
         # print(f'dd_phi2 {dd_phi2}')
 
-        return np.array([d_phi1, dd_phi1, d_phi2, dd_phi2])
+        x_dot = np.array([d_phi1, dd_phi1, d_phi2, dd_phi2])
+
+        return x_dot
     
     def inverse_dynamics(self, x, x_dot):
         phi1, d_phi1, phi2, d_phi2 = x

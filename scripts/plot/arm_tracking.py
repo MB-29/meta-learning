@@ -70,8 +70,11 @@ n_gradient = 60_000
 n_gradient = 45_000
 n_gradient = 35_000
 # n_gradient = 200_000
-fig = plt.figure(figsize=(4, 3))
+fig = plt.figure(figsize=(3., 2.))
 fig.set_tight_layout(True)
+
+plt.axvspan(-1., 60, facecolor='black', alpha=0.3)
+
 
 # for model_index, metamodel_name in enumerate(['tldr']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil']):
@@ -123,20 +126,23 @@ x_values, u_values = control_loop(robot, u_ff_values, x_target_values, plot=plot
 # plt.plot(u_ff_values.squeeze(), color='purple', lw=2.5, alpha=.7)
 # plt.plot(u_target_values.squeeze(), ls='--', lw=2.5, color='black')
 # plt.ylabel(r'input')
-# plt.xticks([])
+plt.xticks([0, 120], labels=[r'$0$', r'$100$'])
 # plt.ylim((-2.1, -0.))
 # plt.yticks([])
 # plt.ylim((-1.5*gamma, 1.5*gamma))
 # plt.subplot(2, 1, 2)
-# plt.ylabel(r'tip height')
+plt.ylabel(r'tip height')
 plt.xlabel(r'time')
+plt.gca().xaxis.set_label_coords(.35, -0.1)
+plt.title('arm')
 tip_abscissa, tip_ordinate = robot.compute_tip_positions(x_values).T
 target_abscissa, target_ordinate = robot.compute_tip_positions(x_target_values).T
 plt.plot(target_ordinate, ls='--', lw=2.5, color='black')
-plt.plot(tip_ordinate, color='purple', lw=2.5, alpha=.7)  
+plt.plot(tip_ordinate, color='slategrey', lw=2.5, alpha=.7)  
 error_values = robot.evaluate_tracking(x_values, x_target_values)
 print(f'agent analytic, total error {error_values.sum()}')
-plt.suptitle(r'arm')
+# plt.suptitle(r'arm')
+plt.text(0.1, -.6, 'adaptation', fontsize=12)
 
 # plt.subplot(2, 1, 3)
 # plt.plot(error_values, ls='--', color='black')

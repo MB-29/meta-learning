@@ -5,7 +5,7 @@ from hypnettorch.mnets import MLP
 import matplotlib.pyplot as plt
 
 from systems import Dipole
-from models import TLDR, ANIL, MAML, CoDA
+from models import CAMEL, ANIL, MAML, CoDA
 from meta_training import meta_train, test_model
 
 
@@ -25,7 +25,7 @@ V_net = torch.nn.Sequential(
     nn.Tanh(),
     nn.Linear(16, r)
 )
-tldr = TLDR(T_train, r, V_net, c=None)
+tldr = CAMEL(T_train, r, V_net, c=None)
 
 net = torch.nn.Sequential(
     nn.Linear(2, 16),

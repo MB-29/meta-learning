@@ -5,7 +5,7 @@ from hypnettorch.mnets import MLP
 import matplotlib.pyplot as plt
 
 from systems.cartpole import DampedActuatedCartpole
-from models import TLDR, MAML, ANIL, CoDA
+from models import CAMEL, MAML, ANIL, CoDA
 from meta_training import meta_train, test_model
 
 system = DampedActuatedCartpole()
@@ -23,7 +23,7 @@ V_net = torch.nn.Sequential(
     nn.Tanh(),
     nn.Linear(16, r),
 )
-tldr = TLDR(T_train, r, V_net, c=None)
+tldr = CAMEL(T_train, r, V_net, c=None)
 
 net = torch.nn.Sequential(
     nn.Linear(d, 16),
@@ -50,10 +50,10 @@ metamodel_choice = {
     'tldr': tldr,
 }
 
-metamodel_name = 'tldr'
 metamodel_name = 'anil'
 metamodel_name = 'maml'
 metamodel_name = 'coda'
+metamodel_name = 'tldr'
 metamodel = metamodel_choice[metamodel_name]
 
 if __name__ == '__main__':

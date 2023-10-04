@@ -37,6 +37,7 @@ Mass, mass = 3.4, 1.2
 Mass, mass = 1.7, .4
 Mass, mass = 1., .2
 Mass, mass = 3., 1.
+Mass, mass = 1.9, 1.6
 
 # Mass, mass = .9, .2
 l = 1
@@ -66,7 +67,7 @@ plot = None
 
 
 n_gradient = 50_000
-max_shots = 100
+max_shots = 50
 fig = plt.figure(figsize=(4.2, 3))
 fig.set_tight_layout(True)
 shot_values = np.arange(0, max_shots)  

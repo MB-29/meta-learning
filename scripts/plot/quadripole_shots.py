@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from systems import Quadrupole
 from meta_training import test_model
-from quadrupole import metamodel_choice
+from scripts.train.quadrupole import metamodel_choice
 from scripts.plot.layout import color_choice
 
 rc('font', size=15)

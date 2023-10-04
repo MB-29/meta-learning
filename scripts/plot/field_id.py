@@ -5,7 +5,7 @@ import torch.nn as nn
 from tqdm import tqdm 
 from matplotlib import rc
 
-from models import TaskLinearMetaModel, MAML, ANIL
+from models import CAMEL, MAML, ANIL
 from systems.dipole import Dipole
 
 rc('font', size=15)
@@ -53,7 +53,7 @@ net = torch.nn.Sequential(
 # torch.randn(T, 2, requires_grad=True)
 # W_init = torch.abs(torch.randn(T_train, r))
 head = torch.nn.Linear(r, 1)
-metamodel = TaskLinearMetaModel(T_train, r, V_net, c=None)
+metamodel = CAMEL(T_train, r, V_net, c=None)
 # metamodel = ANIL(T_train, V_net, head, lr=0.1)
 # metamodel = MAML(T_train, net, lr=0.1)
 
@@ -105,7 +105,7 @@ for step in tqdm(range(n_gradient)):
     # metamodel.get_context(meta_dataset, n_steps=10)
 
     W_bar = metamodel.W.data
-    tldr = TaskLinearMetaModel(T_train, r, V_net, W=W_bar)
+    tldr = CAMEL(T_train, r, V_net, W=W_bar)
 
     V_hat, W_hat = tldr.calibrate(W_train[:2])
     # V_hat, W_hat = metamodel.calibrate(W_train)

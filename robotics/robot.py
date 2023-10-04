@@ -47,7 +47,7 @@ class Robot:
         # dx += noise
         # print(dx)
         self.x += dx
-        # self.x = np.clip(self.x, self.x_min, self.x_max)
+        self.x = np.clip(self.x, self.x_min, self.x_max)
         return dx
 
     def reset(self, x0=None):

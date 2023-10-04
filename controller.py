@@ -20,7 +20,7 @@ class Controller:
         # print(u_values)
         # print(f'adapt with shape {state_values.shape[0]   }')
         # adaptation_data = self.data
-        self.adapted_model = self.metamodel.adapt_task_model(self.adaptation_data, n_steps=20)
+        self.adapted_model = self.metamodel.adapt_task_model(self.adaptation_data, n_steps=5)
         # print(f'w ={self.adapted_model.w}')
 
     def interpret(self, interpreter):
@@ -39,8 +39,8 @@ class Controller:
         e_d = x_target[1::2] - x[1::2] 
         # u_d = 200*np.array([0., 1.]) @ e_d
 
-        u_p = .1*np.array([1, 0])@(x_target[::2] - x[::2])
-        u_d = .1*np.array([1., 0.]) @ e_d
+        u_p = 1.1*(x_target[0] + np.sin(x_target[2]) - x[0] - np.sin(x[2]))
+        u_d = .7*np.array([1., 0.]) @ e_d
         # u_p = x[2] - np.pi
         # target_tip = target_tip_positions[t, :] 
         # tip  = robot.compute_tip_positions(x.reshape(1, -1))
@@ -49,30 +49,32 @@ class Controller:
 
         # u = [u_p + u_d]<@
         u = u_ff 
+        u = u_ff + u_p + u_d    
         # u = u_ff + u_p
-        # u = u_ff + u_p + u_d
 
         return u
 
 
 def adaptive_control(robot, controller, T, x0=None, interpreter=None, plot=None):
     robot.reset(x0)
-    t_event = 400
+    t_event = 350
     state_values = np.zeros((T+1, robot.d))
     u_values = np.zeros((T+1, robot.m))
     if interpreter is not None:
         estimate_values = np.zeros((T, interpreter.shape[1])) 
     # target_tip_positions = robot.compute_tip_positions(x_target_values)
-    robot.Mass = 1.9
-    robot.mass = 0.6
+    robot.Mass = 1.5
+    robot.mass = .3
+    estimate = np.zeros(2)
     for t in range(T):
         x = robot.observe_state()
-        state_values[t] = x
+        state_values[t] = x.copy()
         # if t==0:
         # print(u_values)
         # print((t-20, max(t-1, 0)))
-        window = t if t <= t_event else max(t-t_event-20, 10)
-        # window = 50
+        window = t if t <= t_event else max(t-t_event, 3)
+        # window = t
+        # window = 500
         controller.adapt(state_values[t-window:t], u_values[t-window:max(t-1, 0)])
         # print(controller.adapted_model.get_context())
         u = controller.control(state_values, t)
@@ -81,16 +83,18 @@ def adaptive_control(robot, controller, T, x0=None, interpreter=None, plot=None)
         robot.step(u)
 
         if t > t_event:  
-            robot.Mass = 1.7
-            # robot.mass = 1.
+            robot.Mass = 3.
+            # robot.mass = .3
 
         if interpreter is not None:
             w = controller.adapted_model.get_context().squeeze().numpy()
             w_ = np.append(w, 1.0)
-            estimate = interpreter.T@w_
+            if t < 580:
+                estimate = interpreter.T@w_
             estimate_values[t] = estimate.copy()
+            # print(f'window = {window}, estimate={estimate[0]}')
 
-        u_values[t] = u
+        u_values[t] = u.copy()
 
 
         if plot is None or t%5!=0:
@@ -164,7 +168,7 @@ def control_loop(robot, u_ff_values, x_target_values, parameter_changes=None, x0
         # u_p = 10*np.array([residual])
 
         u = u_ff 
-        u = u_ff + u_d
+        # u = u_ff + u_d
         u = u_ff + u_d + u_p 
 
         robot.step(u)

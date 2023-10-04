@@ -62,9 +62,9 @@ def test_model(metamodel, test_dataset, adaptation_indices, n_steps):
 
 if __name__ == '__main__':
 
-    from models import TLDR
+    from models import CAMEL
     from systems import Cartpole, Dipole
-
+    
     # np.random.seed(5)
     # torch.manual_seed(5)
 
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     nn.Linear(16, r)
     )  
 
-    metamodel = TLDR(T_train, r, V_net, c=None)
+    metamodel = CAMEL(T_train, r, V_net, c=None)
     test = {
         'function': test_model,
         'dataset': test_dataset,

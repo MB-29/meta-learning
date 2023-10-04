@@ -16,21 +16,26 @@ torch.manual_seed(5)
 system = DampedActuatedCartpole()
 
 dt = 0.02
-sigma = .0001
+sigma = .000
 alpha, beta = 0., 0.1
-gamma = 5
 Mass, mass = 1.5, .6
 Mass, mass = 1.2, .25
 Mass, mass = 1.4, .7
-Mass, mass = 1.9, .5
+
+gamma = 5
 Mass, mass = 1., .2
+T = 150
+
+# gamma = 8
+# Mass, mass = 1.9, .5
 # Mass, mass = .9, .2
+# T = 140
+
 l = 1
 robot = Cartpole(mass, Mass, l, alpha, beta, sigma=sigma)
 
 
 # d = robot.d
-T = 200
 def law(t):
     magnitude = gamma/3 + (t/(T*dt))*gamma/3
     magnitude = lambda u: gamma * np.tanh((2+t/(T*dt))*u)
@@ -53,8 +58,13 @@ plot = None
 
 n_gradient = 50_000
 shots = 10
-fig = plt.figure(figsize=(4.5, 3))
+fig = plt.figure(figsize=(3., 1.5))
 fig.set_tight_layout(True)
+
+
+plt.axvspan(-1., 42, facecolor='black', alpha=0.3)
+
+
 # for model_index, metamodel_name in enumerate(['tldr']):
 for model_index, metamodel_name in enumerate(['tldr', 'anil']):
 # for model_index, metamodel_name in enumerate(['tldr', 'anil', 'maml', 'coda']):
@@ -87,7 +97,7 @@ for model_index, metamodel_name in enumerate(['tldr', 'anil']):
     # plt.subplot(2, 1, 2)
     tip_height = x_values[:, 0] + l*np.sin(x_values[:, 2])
     tip_height = -l*np.cos(x_values[:, 2])
-    plt.plot(tip_height, label=metamodel_name, color=color, lw=2.5, alpha=.8)
+    plt.plot(tip_height[50:], label=metamodel_name, color=color, lw=2.5, alpha=.8)
 
     error_values = robot.evaluate_tracking(x_values, x_target_values)
     print(f'model {metamodel_name}, total error {error_values.sum()}')
@@ -100,13 +110,15 @@ u_ff_values = robot.plan_inverse_dynamics(x_target_values)
 x_values, u_values = control_loop(robot, u_ff_values, x_target_values, plot=plot)
 
 # plt.subplot(2, 1, 1)
-# plt.plot(u_ff_values.squeeze(), lw=2.5, color='indigo', alpha=.8)
+# plt.plot(u_ff_values.squeeze(), lw=2.5, color='slategrey', alpha=.8)
 
 # plt.subplot(2, 1, 2)
 tip_height = x_values[:, 0] + l*np.sin(x_values[:, 2])
 tip_height = -l*np.cos(x_values[:, 2])
-plt.plot(tip_height, color='indigo', lw=2.5, alpha=.8, label='analytic')
+plt.plot(tip_height[50:], color='slategrey', lw=2.5, alpha=.8, label='analytic')
 # plt.gca().get_yaxis().set_label_coords(-0.1,0.5)
+
+plt.text(0, .5, 'adaptation', fontsize=12)
 
 error_values = robot.evaluate_tracking(x_values, x_target_values)
 print(f'analytic model, total error {error_values.sum()}')
@@ -117,17 +129,18 @@ print(f'analytic model, total error {error_values.sum()}')
 # plt.xticks([])
 
 # plt.subplot(2, 1, 2)
-plt.ylim((-1.1, 1.1))
+# plt.ylim((-1.1, 1.1))
 plt.yticks((-1, 1))
 plt.ylabel(r'tip height')
-plt.xlabel(r'time')
+plt.xticks([])
+# plt.xlabel(r'time')
 tip_height = x_target_values[:, 0] + l*np.sin(x_target_values[:, 2])
 tip_height = -l*np.cos(x_target_values[:, 2])
-plt.plot(tip_height, color='black', ls='--', lw=2.5, label='target')
+plt.plot(tip_height[50:], color='black', ls='--', lw=2.5, label='target')
 # plt.gca().get_yaxis().set_label_coords(-0.2,0.5)
 error_values = robot.evaluate_tracking(x_values, x_target_values)
 # plt.suptitle(r'damped cartpole inverse dynamics tracking')
-plt.suptitle(r'cartpole')
+plt.title(r'cartpole')
 # plt.subplot(2, 1, 3)
 # plt.plot(error_values, ls='--', color='black')
 

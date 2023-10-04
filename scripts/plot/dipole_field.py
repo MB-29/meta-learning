@@ -26,7 +26,7 @@ adaptation_indices = np.random.randint(400, size=n_shots)
 # adaptation_indices = np.arange(400)
 
 color_choice = {'maml': 'black', 'tldr': 'darkred', 'coda': 'darkblue', 'anil': 'purple'}
-title_choice = {'maml': r'MAML', 'tldr': r'TLDR', 'coda': 'darkblue', 'anil': 'purple'}
+title_choice = {'maml': r'MAML', 'tldr': r'CAMEL', 'coda': 'darkblue', 'anil': 'purple'}
 
 
 
@@ -51,7 +51,7 @@ for task_index in range(T_display):
     plt.xticks([-1., 0., 1.])
     ax = plt.gca()
     if task_index == 0:
-        plt.title('ground truth')
+        plt.title('target')
         # ax.text(-3, 0.5, r'new dipole 1')
         # ax.legend(loc='lower center', bbox_to_anchor=(-.7,0), fancybox=True)
     if task_index == 1:

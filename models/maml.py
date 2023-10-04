@@ -100,6 +100,12 @@ class ANIL(MAML):
         features = self.body(points)
         head = self.gradient_steps(features, targets, n_steps, plot=plot)
         return BodyHead(self.body, head)
+    def create_task_model(self, w):
+        r = w.shape[0]
+        head = nn.Linear(r, 1)
+        head.weight = nn.Parameter(w.unsqueeze(0))
+        return BodyHead(self.body, head)
+
     
     def get_context_values(self, dataset, n_steps):
         T = len(dataset)

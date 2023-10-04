@@ -4,7 +4,7 @@ import torch
 from matplotlib import rc
 
 from systems import Capacitor
-from capacitor import metamodel_choice, TLDR, V_net, r
+from capacitor import metamodel_choice, CAMEL, V_net, r
 from scripts.plot.layout import color_choice, title_choice
 from meta_training import test_model
 from interpret import estimate_context_transform
@@ -13,7 +13,7 @@ from interpret import estimate_context_transform
 # np.random.seed(5)
 # torch.manual_seed(5)
 
-data_path = 'data/capacitor/epsilon_01'
+data_path = 'data/capacitor/epsilon_05'
 system = Capacitor(data_path)
 meta_dataset = system.generate_training_data()
 test_dataset = system.generate_test_data()
@@ -39,7 +39,7 @@ model_names = ['tldr_10000', 'coda_3000']
 model_names = ['tldr_10000', 'coda_3000']
 model_names = ['tldr_6000', 'coda_3000']
 model_names = ['tldr', 'coda', 'anil']
-model_names = ['tldr', 'coda']
+# model_names = ['tldr', 'coda']
 
 # model_names = ['tldr_10000']
 # model_names = ['tldr', 'anil', 'coda']
@@ -53,7 +53,7 @@ for model_index, name in enumerate(model_names):
     architecture = name.split('_')[0]
     metamodel = metamodel_choice[architecture]
     print(f'model {name}')
-    path = f'output/models/capacitor/epsilon_01/{name}.ckpt'
+    path = f'output/models/capacitor/epsilon_05/{name}.ckpt'
     checkpoint = torch.load(path)
     metamodel.load_state_dict(checkpoint)
     context_error_values = []
@@ -83,7 +83,7 @@ for model_index, name in enumerate(model_names):
             w_star = system.W_test[task_index]
             error = np.linalg.norm(w_hat-w_star)
             mape = np.mean(np.abs(w_hat - w_star) / np.abs(w_star))
-            mape = np.mean(np.abs(w_hat - w_star) / 0.2)
+            mape = np.mean(np.abs(w_hat - w_star) /.5)
             context_error[task_index] = mape
         context_error_values.append(context_error)
     results[architecture] = context_error_values
@@ -94,10 +94,10 @@ fig = plt.figure()
 fig.set_tight_layout(True)
 
 for model_name, context_error_values in results.items():
-    color = color_choice[model_name]
+    color = color_choice[model_name]    
     # plt.plot(supervision_values, context_error_values, color=color)
-    plt.plot(supervision_values, np.mean(context_error_values, axis=1), color=color, ls='--')
-    plt.plot(supervision_values, np.median(context_error_values, axis=1), color=color)
+    # plt.scatter(supervision_values, np.min(context_error_values, axis=1), color=color, ls='--')
+    plt.scatter(supervision_values, np.median(context_error_values, axis=1), color=color)
     min_values = np.array(context_error_values).min(axis=1)
     max_values = np.array(context_error_values).max(axis=1)
     plt.fill_between(supervision_values, min_values, max_values, color=color, alpha=.4)

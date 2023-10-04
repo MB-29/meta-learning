@@ -5,7 +5,7 @@ import torch.nn as nn
 from tqdm import tqdm 
 from matplotlib import rc
 
-from models import TaskLinearMetaModel, TaskLinearModel, MAML, CoDA
+from models import CAMEL, TaskLinearModel, MAML, CoDA
 from systems.static_arm import Arm
 
 rc('font', size=15)
@@ -53,7 +53,7 @@ V_net = torch.nn.Sequential(
 # c_net = nn.Linear(2, 2)
 W_values = torch.abs(torch.randn(T_train, r))
 # torch.randn(T, 2, requires_grad=True)
-metamodel = TaskLinearMetaModel(V_net, c=None)
+metamodel = CAMEL(V_net, c=None)
 training_task_models = metamodel.define_task_models(W_values)
 
 

@@ -50,11 +50,17 @@ class Quadrupole(StaticSystem):
     # W_test = np.vstack(list(map(np.ravel, parameter_grid_test))).T
     # test_task_n_trajectories = 1
     W_test = np.array([
-        [1.2, 0.9, 1.3, -1.5],
+        [1.2, 1., 1.3, 1.5],
+        # [0.6, 1.2, 1., 0.9],
+        # [1., -1., 1., -1.],
+        [1., -1., 0., -0.],
+    ])
+    W_test = np.array([
+        [1.2, 1.5, 1.3, 1.5],
         # [0.6, 1.2, 1., 0.9],
         [1., -1., 1., -1.],
     ])
-
+    # W_test = np.random.randn(10, 4)
 
     n_points = 20
     x1_values = torch.linspace(-0.5, 0.5, n_points)
@@ -154,8 +160,8 @@ class Quadrupole(StaticSystem):
             self.plane_x2.numpy().T,
             vector_x.T,
             vector_y.T,
-            # color='black',
-            linewidth=linewidth*5,
+            color='black',
+            linewidth=linewidth*2,
             arrowsize=.8,
             density=.5,
             **kwargs)

@@ -5,7 +5,7 @@ from hypnettorch.mnets import MLP
 import matplotlib.pyplot as plt
 
 from systems.arm import ActuatedArm
-from models import TLDR, MAML, ANIL, CoDA
+from models import CAMEL, MAML, ANIL, CoDA
 from meta_training import meta_train, test_model
 
 sigma = 0
@@ -29,7 +29,7 @@ V_net = torch.nn.Sequential(
     nn.Tanh(),
     nn.Linear(64, r),
 )
-tldr = TLDR(T_train, r, V_net, c=None)
+tldr = CAMEL(T_train, r, V_net, c=None)
 
 net = torch.nn.Sequential(
     nn.Linear(d, 64),
