@@ -13,8 +13,8 @@ class ActuatedCartpole(ActuatedSystem):
 
     M_values_train = np.array([1., 2.0])
     m_values_train = np.array([.2, .5])
-    # mll_values_train = np.array([1.5, 2.5])
-    # mgl_values_train = np.array([10., 11.])
+    # M_values_train = np.array([1., 2.0, 3.0])
+    # m_values_train = np.array([.2, .5, .9])
     parameter_grid_train = np.meshgrid(M_values_train, m_values_train)
     W_train = np.dstack(parameter_grid_train).reshape(-1, 2)
 
@@ -85,7 +85,7 @@ class ActuatedCartpole(ActuatedSystem):
 
 class DampedActuatedCartpole(ActuatedCartpole):
 
-    d, m, r = 6, 1, 3
+    d, m, r = 6, 1, 2
 
     def __init__(self, dt = 0.02, **kwargs) -> None:
         super().__init__(dt=dt, beta=0.1, **kwargs)
@@ -100,6 +100,10 @@ class DampedActuatedCartpole(ActuatedCartpole):
         x_values = np.stack((d_y, dd_y, cphi, sphi, d_phi, dd_phi), axis=1)
         points = torch.tensor(x_values).float()
         return points
+    def V_star(self, x):
+        y, dd_y, cphi, sphi, d_phi, dd_phi  = torch.unbind(x, dim=1)
+        v = torch.stack((dd_y, dd_phi*cphi - d_phi**2*sphi), dim=1)
+        return v
 
 
 
