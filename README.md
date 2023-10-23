@@ -2,6 +2,18 @@
 
 We introduce a meta-learning architecture that aims to learn physical systems from multi-environment data in an interpretable way.
 
+## Demo
+
+![capacitor](demo/capacitor_field.png)
+5-shot adaptation of a capacitor field with unknown angle and displace
+ment of the upper electrode.
+![arm](demo/tracking_arm.png)
+Trajectory tracking of a simulated robotic arm with unknown parameters using inverse dynamics. Red is CAMEL, gray is an an analytic baseline and blue is MAML.
+
+![3-charge system](demo/dipole_field.png)
+2-shot adaptation of an electrostatic field.
+
+
 ## Example
 
 ```python
